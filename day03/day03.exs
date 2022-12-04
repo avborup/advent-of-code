@@ -26,4 +26,24 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    File.stream!("input.txt")
+    |> Stream.map(&String.trim/1)
+    |> Stream.chunk_every(3)
+    |> Stream.map(&find_group_item/1)
+    |> Stream.map(&Part1.item_priority/1)
+    |> Enum.sum()
+    |> IO.inspect()
+  end
+
+  def find_group_item(group) do
+    Enum.map(group, &String.to_charlist/1)
+    |> Enum.map(&MapSet.new/1)
+    |> Enum.reduce(&MapSet.intersection/2)
+    |> Enum.at(0)
+  end
+end
+
 Part1.solve()
+Part2.solve()
