@@ -1,5 +1,15 @@
 defmodule Part1 do
   def solve() do
+    {stacks, instructions} = parse_input()
+
+    instructions
+    |> Enum.reduce(stacks, &execute_instruction/2)
+    |> Enum.map(&List.first/1)
+    |> Enum.join("")
+    |> IO.puts()
+  end
+
+  def parse_input() do
     stream = File.stream!("inputs/day05-input.txt") |> Stream.map(&String.trim_trailing/1)
 
     crate_lines =
@@ -11,13 +21,12 @@ defmodule Part1 do
 
     stacks = parse_stacks(crate_lines, num_stacks)
 
-    stream
-    |> Stream.drop(Enum.count(crate_lines) + 2)
-    |> Stream.map(&parse_instruction/1)
-    |> Enum.reduce(stacks, &execute_instruction/2)
-    |> Enum.map(&List.first/1)
-    |> Enum.join("")
-    |> IO.puts()
+    instructions =
+      stream
+      |> Stream.drop(Enum.count(crate_lines) + 2)
+      |> Stream.map(&parse_instruction/1)
+
+    {stacks, instructions}
   end
 
   def execute_instruction([amount, from, onto], stacks) do
@@ -25,9 +34,13 @@ defmodule Part1 do
 
     {taken, remaining} = Enum.at(stacks, from) |> Enum.split(amount)
 
+    update_stacks(stacks, {from, remaining}, {onto, Enum.reverse(taken)})
+  end
+
+  def update_stacks(stacks, {from, remaining}, {onto, put_on_top}) do
     stacks
     |> List.replace_at(from, remaining)
-    |> List.replace_at(onto, Enum.reverse(taken) ++ Enum.at(stacks, onto))
+    |> List.replace_at(onto, put_on_top ++ Enum.at(stacks, onto))
   end
 
   def parse_stacks(crate_lines, num_stacks) do
@@ -59,4 +72,25 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    {stacks, instructions} = Part1.parse_input()
+
+    instructions
+    |> Enum.reduce(stacks, &execute_instruction/2)
+    |> Enum.map(&List.first/1)
+    |> Enum.join("")
+    |> IO.puts()
+  end
+
+  def execute_instruction([amount, from, onto], stacks) do
+    {from, onto} = {from - 1, onto - 1}
+
+    {taken, remaining} = Enum.at(stacks, from) |> Enum.split(amount)
+
+    Part1.update_stacks(stacks, {from, remaining}, {onto, taken})
+  end
+end
+
 Part1.solve()
+Part2.solve()
