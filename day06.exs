@@ -21,6 +21,15 @@ defmodule Part1 do
       end
     end)
   end
+
+  # Alternative:
+  # def find_marker(input, marker_size, index \\ 0) do
+  #   if Enum.take(input, marker_size) |> Enum.uniq() |> Enum.count() == marker_size do
+  #     index + marker_size
+  #   else
+  #     find_marker(Enum.drop(input, 1), marker_size, index + 1)
+  #   end
+  # end
 end
 
 defmodule Part2 do
