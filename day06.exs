@@ -23,4 +23,13 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    Part1.read_input()
+    |> (&Part1.find_marker(&1, 14)).()
+    |> IO.inspect()
+  end
+end
+
 Part1.solve()
+Part2.solve()
