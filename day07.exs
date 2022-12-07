@@ -82,16 +82,46 @@ defmodule Part1 do
     file
   end
 
-  def search(dir, predicate, results \\ []) do
-    Enum.reduce(dir.children, results, fn {_, child}, acc ->
-      acc = if predicate.(child), do: [child | acc], else: acc
+  def search(node, predicate, results \\ [])
 
+  def search(dir = %{children: _}, predicate, results) do
+    acc = if predicate.(dir), do: [dir | results], else: results
+
+    Enum.reduce(dir.children, acc, fn {_, child}, acc ->
       case child do
         %{children: _} -> search(child, predicate, acc)
         _ -> acc
       end
     end)
   end
+
+  def search(file, predicate, results) do
+    if predicate.(file), do: [file | results], else: results
+  end
+end
+
+defmodule Part2 do
+  def solve() do
+    root = Part1.read_input_tree()
+
+    Part1.search(root, &will_dir_be_enough?(&1, root.size))
+    |> Enum.map(& &1.size)
+    |> Enum.min()
+    |> IO.inspect()
+  end
+
+  def will_dir_be_enough?(node, used_space) do
+    total_space = 70_000_000
+    needed_space = 30_000_000
+
+    unused_space_after_delete = total_space - used_space + node.size
+
+    case node do
+      %{children: _} when unused_space_after_delete >= needed_space -> true
+      _ -> false
+    end
+  end
 end
 
 Part1.solve()
+Part2.solve()
