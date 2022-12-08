@@ -75,4 +75,31 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    trees = Part1.read_input()
+
+    trees
+    |> Enum.map(&calculate_scenic_score(trees, &1))
+    |> Enum.max()
+    |> IO.inspect()
+  end
+
+  def calculate_scenic_score(trees, tree) do
+    Part1.all_directions()
+    |> Enum.map(&count_trees(trees, tree, &1))
+    |> Enum.product()
+  end
+
+  def count_trees(trees, {location, height}, direction) do
+    adjacent = Part1.get_all_trees_in_direction(trees, location, direction)
+
+    case Enum.find_index(adjacent, &(&1 >= height)) do
+      nil -> Enum.count(adjacent)
+      index -> index + 1
+    end
+  end
+end
+
 Part1.solve()
+Part2.solve()
