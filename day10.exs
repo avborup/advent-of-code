@@ -61,4 +61,30 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    Part1.parse_input()
+    |> Part1.create_cycles()
+    |> render_crt()
+    |> IO.puts()
+  end
+
+  def render_crt(cycles) do
+    Enum.reduce(cycles, [], fn cpu, crt ->
+      pixel =
+        if (rem(cpu.cycle - 1, 40) - cpu.register) in -1..1 do
+          "🎁"
+        else
+          "🎄"
+        end
+
+      [pixel | crt]
+    end)
+    |> Enum.reverse()
+    |> Enum.chunk_every(40)
+    |> Enum.map_join("\n", &Enum.join(&1, ""))
+  end
+end
+
 Part1.solve()
+Part2.solve()
