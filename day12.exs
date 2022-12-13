@@ -1,26 +1,27 @@
 defmodule Part1 do
   def solve() do
-    read_input()
-    |> find_path()
+    {start_pos, end_pos, map} = read_input()
+
+    find_path(map, end_pos, &(&1 == start_pos))
     |> IO.inspect()
   end
 
-  def find_path({start_pos, end_pos, map}) do
+  def find_path(map, end_pos, predicate) do
     visited = MapSet.new()
     queue = :queue.in({end_pos, 0}, :queue.new())
 
-    bfs(start_pos, map, queue, visited)
+    bfs(map, queue, visited, predicate)
   end
 
-  def bfs(start_pos, map, queue, visited) do
+  def bfs(map, queue, visited, predicate) do
     {{:value, {cur_pos, distance}}, queue} = :queue.out(queue)
 
     cond do
-      cur_pos == start_pos ->
+      predicate.(cur_pos) ->
         distance
 
       MapSet.member?(visited, cur_pos) ->
-        bfs(start_pos, map, queue, visited)
+        bfs(map, queue, visited, predicate)
 
       true ->
         visited = MapSet.put(visited, cur_pos)
@@ -30,7 +31,7 @@ defmodule Part1 do
         |> Enum.filter(&height_difference_is_allowed?(map, cur_pos, &1))
         |> Enum.map(&{&1, distance + 1})
         |> Enum.reduce(queue, &:queue.in(&1, &2))
-        |> (&bfs(start_pos, map, &1, visited)).()
+        |> (&bfs(map, &1, visited, predicate)).()
     end
   end
 
@@ -90,4 +91,14 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    {_, end_pos, map} = Part1.read_input()
+
+    Part1.find_path(map, end_pos, &(Map.get(map, &1) == 0))
+    |> IO.inspect()
+  end
+end
+
 Part1.solve()
+Part2.solve()
