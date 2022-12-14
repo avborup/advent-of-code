@@ -1,6 +1,8 @@
 defmodule Part1 do
   def solve() do
     read_input()
+    |> Stream.chunk_every(2)
+    |> Stream.map(fn [left, right] -> {left, right} end)
     |> Stream.with_index(1)
     |> Stream.filter(fn {pair, _} -> compare(pair) == :valid end)
     |> Stream.map(&elem(&1, 1))
@@ -52,9 +54,26 @@ defmodule Part1 do
     |> Stream.map(&String.trim_trailing/1)
     |> Stream.reject(&(String.length(&1) == 0))
     |> Stream.map(&(Code.eval_string(&1) |> elem(0)))
-    |> Stream.chunk_every(2)
-    |> Stream.map(fn [left, right] -> {left, right} end)
+  end
+end
+
+defmodule Part2 do
+  def solve() do
+    packets =
+      Part1.read_input()
+      |> Enum.to_list()
+
+    distress_packets = [[[2]], [[6]]]
+
+    (distress_packets ++ packets)
+    |> Enum.sort(fn a, b -> Part1.compare({a, b}) == :valid end)
+    |> Enum.with_index(1)
+    |> Enum.filter(fn {packet, _} -> packet in distress_packets end)
+    |> Stream.map(&elem(&1, 1))
+    |> Enum.product()
+    |> IO.inspect()
   end
 end
 
 Part1.solve()
+Part2.solve()
