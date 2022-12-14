@@ -1,17 +1,15 @@
 defmodule Part1 do
   def solve() do
-    occupied = read_input()
+    {occupied, void_y} = read_input()
 
-    void_y = Enum.map(occupied, fn {_, y} -> y end) |> Enum.max()
-
-    drop_sand(occupied, void_y)
+    drop_sand(occupied, void_y, :part1)
     |> Enum.count()
     |> IO.inspect()
   end
 
-  def drop_sand(start_pos \\ {500, 0}, occupied, max_y) do
+  def drop_sand(start_pos \\ {500, 0}, occupied, max_y, part) do
     Stream.unfold(occupied, fn occupied ->
-      case find_rest_position(start_pos, occupied, max_y) do
+      case find_rest_position(start_pos, occupied, max_y, part) do
         nil -> nil
         pos when start_pos == pos -> nil
         pos -> {pos, MapSet.put(occupied, pos)}
@@ -19,11 +17,15 @@ defmodule Part1 do
     end)
   end
 
-  def find_rest_position({_, y}, _, max_y) when y >= max_y do
+  def find_rest_position({_, y}, _, max_y, :part1) when y >= max_y do
     nil
   end
 
-  def find_rest_position(coord, occupied, max_y) do
+  def find_rest_position(coord = {_, y}, _, max_y, :part2) when y + 1 >= max_y do
+    coord
+  end
+
+  def find_rest_position(coord, occupied, max_y, part) do
     down = move(coord, :down)
     left = move(down, :left)
     right = move(down, :right)
@@ -32,7 +34,7 @@ defmodule Part1 do
 
     case next do
       nil -> coord
-      _ -> find_rest_position(next, occupied, max_y)
+      _ -> find_rest_position(next, occupied, max_y, part)
     end
   end
 
@@ -47,9 +49,14 @@ defmodule Part1 do
   # Code below this is purely for parsing the input blocks into a set
 
   def read_input() do
-    File.stream!("inputs/day14-input.txt")
-    |> Stream.map(&read_line/1)
-    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+    occupied =
+      File.stream!("inputs/day14-input.txt")
+      |> Stream.map(&read_line/1)
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    max_y = Enum.map(occupied, fn {_, y} -> y end) |> Enum.max()
+
+    {occupied, max_y}
   end
 
   def generate_coordinate_range({{x1, y1}, {x2, y2}}) do
@@ -83,4 +90,16 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    {occupied, max_y} = Part1.read_input()
+
+    Part1.drop_sand(occupied, max_y + 2, :part2)
+    |> Enum.count()
+    |> Kernel.+(1)
+    |> IO.inspect()
+  end
+end
+
 Part1.solve()
+Part2.solve()
