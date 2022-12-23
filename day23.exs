@@ -140,4 +140,23 @@ defmodule Part1 do
   end
 end
 
+defmodule Part2 do
+  def solve() do
+    Part1.read_input()
+    |> count_rounds_until_finished()
+    |> IO.inspect()
+  end
+
+  def count_rounds_until_finished(elves) do
+    Part1.play_rounds(elves)
+    |> Enum.reduce_while({0, nil}, fn outcome, {round, prev} ->
+      cond do
+        outcome == prev -> {:halt, round}
+        true -> {:cont, {round + 1, outcome}}
+      end
+    end)
+  end
+end
+
 Part1.solve()
+Part2.solve()
