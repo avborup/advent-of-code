@@ -29,7 +29,7 @@ object Day01 {
           }
         )
       })
-      .map(digits => digits._1.get * 10 + digits._2.get)
+      .map(digits => digits._1.getOrElse(0) * 10 + digits._2.getOrElse(0))
       .sum
   }
 
