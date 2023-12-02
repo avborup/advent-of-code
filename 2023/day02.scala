@@ -40,11 +40,7 @@ object Day02 {
         })
       })
 
-    val powers = requiredByGame.map((required) => {
-      Seq("red", "green", "blue")
-        .map((color) => required.getOrElse(color, 0))
-        .product
-    })
+    val powers = requiredByGame.map(_.values.product)
 
     powers.sum
   }
@@ -61,9 +57,7 @@ object Game {
 
   def parseGame(game: String): Game = {
     val (gamePart, roundsPart) =
-      (game.split(":").toList: @unchecked) match {
-        case a :: b :: Nil => (a, b)
-      }
+      game.split(":").toSeq match { case Seq(a, b) => (a, b) }
 
     val id = gamePart.split(" ").last.toInt
     val rounds = parseRounds(roundsPart)
@@ -79,12 +73,8 @@ object Game {
     round
       .split(",")
       .map(_.trim)
-      .map((group) => {
-        val (amount, color) = group.split(" ").toSeq match {
-          case Seq(amount, color, _ @_*) => (amount, color)
-        }
-
-        (color, amount.toInt)
+      .map(_.split(" ").toSeq match {
+        case Seq(amount, color) => (color, amount.toInt)
       })
       .toMap
   }
