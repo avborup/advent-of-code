@@ -7,6 +7,7 @@ object Day02 {
     val games = Game.parseGames(input)
 
     println(s"Part 1: ${part1(games)}")
+    println(s"Part 2: ${part2(games)}")
   }
 
   def part1(games: List[Game]): Int = {
@@ -30,7 +31,22 @@ object Day02 {
   }
 
   def part2(games: List[Game]): Int = {
-    ???
+    val requiredByGame = games
+      .map((game) => {
+        game.rounds.fold(Map.empty[String, Int])((acc, round) => {
+          acc ++ round.map { case (color, amount) =>
+            color -> acc.getOrElse(color, 0).max(amount)
+          }
+        })
+      })
+
+    val powers = requiredByGame.map((required) => {
+      Seq("red", "green", "blue")
+        .map((color) => required.getOrElse(color, 0))
+        .product
+    })
+
+    powers.sum
   }
 }
 
