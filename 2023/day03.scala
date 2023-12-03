@@ -13,27 +13,19 @@ object Day03 {
   def part1(schematic: Schematic) = {
     val partNumberKeys = schematic.entries.keys
       .filter(schematic.isDigitAt)
-      .filter { case (y, x) =>
-        schematic.adjacentTo(y, x).count(k => !schematic.isDigitAt(k)) > 0
-      }
+      .filter(schematic.adjacentTo(_).count(k => !schematic.isDigitAt(k)) > 0)
 
     schematic.getNumbersAtKeys(partNumberKeys).sum
   }
 
   def part2(schematic: Schematic) = {
-    val gearRatios = schematic.entries.toSeq
+    val gears = schematic.entries
       .filter(_._2 == '*')
-      .map { case ((y, x), _) =>
-        val partNumberKeys = schematic
-          .adjacentTo(y, x)
-          .filter(schematic.isDigitAt)
+      .map(e => schematic.adjacentTo(e._1).filter(schematic.isDigitAt))
+      .map(schematic.getNumbersAtKeys)
+      .filter(_.size == 2)
 
-        schematic.getNumbersAtKeys(partNumberKeys) match
-          case a :: b :: Nil => a * b
-          case _             => 0
-      }
-
-    gearRatios.sum
+    gears.map(_.product).sum
   }
 }
 
@@ -44,11 +36,11 @@ extension (c: Coordinate) {
   def x = c._2
 }
 
-case class Schematic(entries: Map[Coordinate, Char], width: Int, height: Int) {
-  def adjacentTo(y: Int, x: Int): Iterable[Coordinate] =
+case class Schematic(entries: Map[Coordinate, Char], width: Int) {
+  def adjacentTo(k: Coordinate): Iterable[Coordinate] =
     (-1 to 1)
-      .flatMap { dx => (-1 to 1).map { dy => (dy + y, dx + x) } }
-      .filter { case (ny, nx) => !(nx == x && ny == y) }
+      .flatMap { dx => (-1 to 1).map { dy => (dy + k.y, dx + k.x) } }
+      .filter { case (ny, nx) => !(nx == k.x && ny == k.y) }
       .filter { case (ny, nx) => entries.contains((ny, nx)) }
 
   def keysForNumberAt(k: Coordinate): Iterable[Coordinate] =
@@ -65,8 +57,8 @@ case class Schematic(entries: Map[Coordinate, Char], width: Int, height: Int) {
   def isDigitAt(key: Coordinate) =
     entries.get(key).exists(_.isDigit)
 
-  def numberAt(y: Int, x: Int) =
-    keysForNumberAt(y, x)
+  def numberAt(k: Coordinate) =
+    keysForNumberAt(k)
       .map(entries.get)
       .flatten
       .mkString
@@ -75,13 +67,12 @@ case class Schematic(entries: Map[Coordinate, Char], width: Int, height: Int) {
   def getNumbersAtKeys(keys: Iterable[Coordinate]) =
     keys
       .foldLeft((Set.empty[Coordinate], List.empty[Int])) {
-        case ((visited, nums), (y, x)) =>
-          if visited.contains((y, x)) then (visited, nums)
-          else
-            (
-              visited ++ keysForNumberAt(y, x),
-              numberAt(y, x).get :: nums
-            )
+        case ((visited, nums), k) if visited.contains(k) => (visited, nums)
+        case ((visited, nums), k) =>
+          (
+            visited ++ keysForNumberAt(k),
+            numberAt(k).get :: nums
+          )
       }
       ._2
 }
@@ -95,9 +86,8 @@ object Schematic {
       .filter { case (_, char) => char != '.' }
       .toMap
 
-    val width = map.keys.map(_._2).max
-    val height = map.keys.map(_._1).max
+    val width = map.keys.map(_.x).max
 
-    Schematic(map, width, height)
+    Schematic(map, width)
   }
 }
