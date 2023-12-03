@@ -37,25 +37,32 @@ object Day03 {
   }
 }
 
-case class Schematic(entries: Map[(Int, Int), Char], width: Int, height: Int) {
-  def adjacentTo(y: Int, x: Int): Iterable[(Int, Int)] =
+type Coordinate = (Int, Int)
+
+extension (c: Coordinate) {
+  def y = c._1
+  def x = c._2
+}
+
+case class Schematic(entries: Map[Coordinate, Char], width: Int, height: Int) {
+  def adjacentTo(y: Int, x: Int): Iterable[Coordinate] =
     (-1 to 1)
       .flatMap { dx => (-1 to 1).map { dy => (dy + y, dx + x) } }
       .filter { case (ny, nx) => !(nx == x && ny == y) }
       .filter { case (ny, nx) => entries.contains((ny, nx)) }
 
-  def keysForNumberAt(y: Int, x: Int): Iterable[(Int, Int)] =
-    (0 to x).reverse
-      .takeWhile(isDigitAt(y, _))
+  def keysForNumberAt(k: Coordinate): Iterable[Coordinate] =
+    (0 to k.x).reverse
+      .takeWhile(isDigitAt(k.y, _))
       .lastOption
       .map(startIndex => {
         (startIndex to width)
-          .takeWhile(isDigitAt(y, _))
-          .map(x => (y, x))
+          .takeWhile(isDigitAt(k.y, _))
+          .map(x => (k.y, x))
       })
       .getOrElse(Nil)
 
-  def isDigitAt(key: (Int, Int)) =
+  def isDigitAt(key: Coordinate) =
     entries.get(key).exists(_.isDigit)
 
   def numberAt(y: Int, x: Int) =
@@ -65,9 +72,9 @@ case class Schematic(entries: Map[(Int, Int), Char], width: Int, height: Int) {
       .mkString
       .toIntOption
 
-  def getNumbersAtKeys(keys: Iterable[(Int, Int)]) =
+  def getNumbersAtKeys(keys: Iterable[Coordinate]) =
     keys
-      .foldLeft((Set.empty[(Int, Int)], List.empty[Int])) {
+      .foldLeft((Set.empty[Coordinate], List.empty[Int])) {
         case ((visited, nums), (y, x)) =>
           if visited.contains((y, x)) then (visited, nums)
           else
