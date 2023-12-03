@@ -14,38 +14,35 @@ object Day03 {
     val partNumberKeys = schematic.entries.keys
       .filter(schematic.isDigitAt)
       .filter { case (y, x) =>
-        schematic.adjacentTo(y, x).count(!_.isDigit) > 0
+        schematic.adjacentTo(y, x).count(k => !schematic.isDigitAt(k)) > 0
       }
 
-    val partNumbers = partNumberKeys
-      .foldLeft((Set.empty[(Int, Int)], List.empty[Int])) {
-        case ((visited, nums), (y, x)) =>
-          if visited.contains((y, x)) then (visited, nums)
-          else
-            (
-              visited ++ schematic.keysForNumberAt(y, x),
-              schematic.numberAt(y, x).get :: nums
-            )
-      }
-      ._2
-
-    partNumbers.sum
+    schematic.getNumbersAtKeys(partNumberKeys).sum
   }
 
   def part2(schematic: Schematic) = {
-    ()
+    val gearRatios = schematic.entries.toSeq
+      .filter(_._2 == '*')
+      .map { case ((y, x), _) =>
+        val partNumberKeys = schematic
+          .adjacentTo(y, x)
+          .filter(schematic.isDigitAt)
+
+        schematic.getNumbersAtKeys(partNumberKeys) match
+          case a :: b :: Nil => a * b
+          case _             => 0
+      }
+
+    gearRatios.sum
   }
 }
 
 case class Schematic(entries: Map[(Int, Int), Char], width: Int, height: Int) {
-  def adjacentTo(y: Int, x: Int): Iterable[Char] =
+  def adjacentTo(y: Int, x: Int): Iterable[(Int, Int)] =
     (-1 to 1)
-      .flatMap { dx => (-1 to 1).map { dy => (x + dx, y + dy) } }
-      .map {
-        case (x, y) if x == 0 && y == 0 => None
-        case (x, y)                     => entries.get((y, x))
-      }
-      .flatten
+      .flatMap { dx => (-1 to 1).map { dy => (dy + y, dx + x) } }
+      .filter { case (ny, nx) => !(nx == x && ny == y) }
+      .filter { case (ny, nx) => entries.contains((ny, nx)) }
 
   def keysForNumberAt(y: Int, x: Int): Iterable[(Int, Int)] =
     (0 to x).reverse
@@ -58,16 +55,28 @@ case class Schematic(entries: Map[(Int, Int), Char], width: Int, height: Int) {
       })
       .getOrElse(Nil)
 
-  def isDigitAt(y: Int, x: Int) =
-    entries.get((y, x)).exists(_.isDigit)
+  def isDigitAt(key: (Int, Int)) =
+    entries.get(key).exists(_.isDigit)
 
   def numberAt(y: Int, x: Int) =
-    val s = keysForNumberAt(y, x)
+    keysForNumberAt(y, x)
       .map(entries.get)
       .flatten
       .mkString
+      .toIntOption
 
-    s.toIntOption
+  def getNumbersAtKeys(keys: Iterable[(Int, Int)]) =
+    keys
+      .foldLeft((Set.empty[(Int, Int)], List.empty[Int])) {
+        case ((visited, nums), (y, x)) =>
+          if visited.contains((y, x)) then (visited, nums)
+          else
+            (
+              visited ++ keysForNumberAt(y, x),
+              numberAt(y, x).get :: nums
+            )
+      }
+      ._2
 }
 
 object Schematic {
