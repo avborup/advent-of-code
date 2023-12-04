@@ -1,4 +1,5 @@
 import scala.io.Source.fromFile
+import scala.collection.immutable.SortedMap
 
 object Day04 {
   def main(args: Array[String]): Unit = {
@@ -12,18 +13,29 @@ object Day04 {
 
   def part1(cards: List[Card]) = {
     cards
-      .map(card => card.winners.intersect(card.has))
-      .map(heldWinners =>
-        if heldWinners.isEmpty then 0
-        else Math.pow(2, heldWinners.size - 1).toInt
+      .map(_.numWinners match
+        case 0 => 0
+        case n => Math.pow(2, n - 1).toInt
       )
       .sum
   }
 
-  def part2(cards: List[Card]) = {}
+  def part2(cards: List[Card]) = {
+    val copiesHeld = Map.from(cards.map(c => c.id -> 1).toMap)
+
+    cards
+      .foldLeft(copiesHeld) { (copiesHeld, card) =>
+        val numCopies = copiesHeld.get(card.id).get
+        (1 to card.numWinners).foldLeft(copiesHeld) { (acc, i) =>
+          acc.updatedWith(card.id + i)(_.map(_ + numCopies))
+        }
+      }
+      .values
+      .sum
+  }
 }
 
-case class Card(id: Int, winners: Set[Int], has: Set[Int])
+case class Card(id: Int, winners: Set[Int], has: Set[Int], numWinners: Int = 0)
 
 object Card {
   def parseCard(line: String) = {
@@ -31,6 +43,7 @@ object Card {
     val number = parts(0).trim().split(" +").last.toInt
     val winners = parts(1).trim().split(" +").map(_.toInt).toSet
     val has = parts(2).trim().split(" +").map(_.toInt).toSet
-    Card(number, winners, has)
+    val numWinners = winners.intersect(has).size
+    Card(number, winners, has, numWinners)
   }
 }
