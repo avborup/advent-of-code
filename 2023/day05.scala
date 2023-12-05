@@ -1,7 +1,6 @@
 package avborup.aoc2023.day05
 
 import scala.io.Source.fromFile
-import scala.collection.SortedMap
 
 object Day05 {
   def main(args: Array[String]): Unit = {
@@ -12,85 +11,58 @@ object Day05 {
     println(s"Part 2: ${part2(input)}")
   }
 
-  val allCategories = List(
-    "seed",
-    "soil",
-    "fertilizer",
-    "water",
-    "light",
-    "temperature",
-    "humidity",
-    "location"
-  )
-
   def part1(input: Input) = {
     input.seeds
-      .map(seed =>
-        allCategories
-          .sliding(2)
-          .foldLeft(seed) { case (value, List(from, to)) =>
-            input.map(from, to, value)
-          }
-      )
+      .map(input.mapAll)
       .min
   }
 
   def part2(input: Input): Int = {
-    val reversedInput = input.copy(
-      mappings = input.mappings.map { case ((from, to), mappings) =>
-        (to, from) -> mappings.map(m =>
-          m.copy(destStart = m.sourceStart, sourceStart = m.destStart)
-        )
-      }
-    )
-    val reverseCategories = allCategories.reverse
-      .sliding(2)
-      .toList
-
-    val maxLocation =
-      input.mappings
-        .get(("humidity", "location"))
-        .get
-        .map(m => m.destStart + m.rangeSize - 1)
-        .max
-
     val seedRanges = input.seeds
       .grouped(2)
       .map { case List(a, b) => (a, b) }
       .toList
 
-    def canFindSeedFor(location: Long) = {
-      val seed = reverseCategories
-        .foldLeft(location) { case (value, List(from, to)) =>
-          reversedInput.map(from, to, value)
-        }
+    val reversedInput = input.flip()
 
+    def canFindSeedFor(location: Long) = {
+      val seed = reversedInput.mapAll(location)
       seedRanges.exists { case (seedsStart, seedsSize) =>
         seedsStart <= seed && seed < seedsStart + seedsSize
       }
     }
 
-    // While loop because we can't do (0 to maxLocation).find(...) because
-    // maxLocation is too big
-    var curLocation = 0
-    while (!canFindSeedFor(curLocation)) {
-      curLocation += 1
-    }
-
-    curLocation
+    Iterator
+      .from(0)
+      .find(canFindSeedFor)
+      .get
   }
 }
 
 case class Input(
     seeds: List[Long],
-    mappings: SortedMap[(String, String), List[Mapping]]
+    mappings: Map[(String, String), List[Mapping]],
+    allMappings: List[(String, String)]
 ) {
-  def map(from: String, to: String, value: Long) = {
-    val category = mappings.get((from, to)).get
+  def map(value: Long, mapping: (String, String)) = {
+    val category = mappings.get(mapping).get
     category
       .find(m => m.sourceStart <= value && value < m.sourceStart + m.rangeSize)
       .map(m => m.destStart + value - m.sourceStart)
       .getOrElse(value)
+  }
+
+  def mapAll(value: Long) = allMappings.foldLeft(value)(map)
+
+  def flip() = {
+    this.copy(
+      mappings = mappings.map { case ((from, to), mappings) =>
+        (to, from) -> mappings.map(m =>
+          m.copy(destStart = m.sourceStart, sourceStart = m.destStart)
+        )
+      },
+      allMappings = allMappings.map { case (from, to) => (to, from) }.reverse
+    )
   }
 }
 
@@ -102,23 +74,28 @@ object Input {
     val (seedsBlock, categoryBlocks) = (blocks.head, blocks.tail)
 
     val seeds = raw"\d+".r.findAllIn(seedsBlock).map(_.toLong).toList
-    val categories = categoryBlocks
-      .map { block =>
-        val lines = block.split("\n")
+    val categories = categoryBlocks.map { block =>
+      val lines = block.split("\n")
 
-        val m = raw"(\w+)-to-(\w+)".r.findFirstMatchIn(lines.head).get
-        val (from, to) = (m.group(1), m.group(2))
+      val m = raw"(\w+)-to-(\w+)".r.findFirstMatchIn(lines.head).get
+      val (from, to) = (m.group(1), m.group(2))
 
-        val entries = lines.tail
-          .map(_.split(" ").map(_.toLong).toSeq)
-          .map { case Seq(a, b, c) => Mapping(b, a, c) }
-          .toList
+      val entries = lines.tail
+        .map(_.split(" ").map(_.toLong).toSeq)
+        .map { case Seq(a, b, c) => Mapping(b, a, c) }
+        .toList
 
-        (from, to) -> entries
-      }
+      (from, to) -> entries
+    }
 
-    val mappings = SortedMap.from(categories)
+    val allMappings = categories
+      .flatMap { case ((from, to), _) => List(from, to) }
+      .toList
+      .distinct
+      .sliding(2)
+      .map { case List(a, b) => (a, b) }
+      .toList
 
-    Input(seeds, mappings)
+    Input(seeds, categories.toMap, allMappings)
   }
 }
