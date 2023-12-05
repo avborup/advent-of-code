@@ -35,8 +35,49 @@ object Day05 {
       .min
   }
 
-  def part2(input: Input) = {
-    ()
+  def part2(input: Input): Int = {
+    val reversedInput = input.copy(
+      mappings = input.mappings.map { case ((from, to), mappings) =>
+        (to, from) -> mappings.map(m =>
+          m.copy(destStart = m.sourceStart, sourceStart = m.destStart)
+        )
+      }
+    )
+    val reverseCategories = allCategories.reverse
+      .sliding(2)
+      .toList
+
+    val maxLocation =
+      input.mappings
+        .get(("humidity", "location"))
+        .get
+        .map(m => m.destStart + m.rangeSize - 1)
+        .max
+
+    val seedRanges = input.seeds
+      .grouped(2)
+      .map { case List(a, b) => (a, b) }
+      .toList
+
+    def canFindSeedFor(location: Long) = {
+      val seed = reverseCategories
+        .foldLeft(location) { case (value, List(from, to)) =>
+          reversedInput.map(from, to, value)
+        }
+
+      seedRanges.exists { case (seedsStart, seedsSize) =>
+        seedsStart <= seed && seed < seedsStart + seedsSize
+      }
+    }
+
+    // While loop because we can't do (0 to maxLocation).find(...) because
+    // maxLocation is too big
+    var curLocation = 0
+    while (!canFindSeedFor(curLocation)) {
+      curLocation += 1
+    }
+
+    curLocation
   }
 }
 
