@@ -1,6 +1,9 @@
+//> using dep org.scala-lang.modules::scala-parallel-collections:1.0.4
+
 package avborup.aoc2023.day05
 
 import scala.io.Source.fromFile
+import scala.collection.parallel.CollectionConverters.*
 
 object Day05 {
   def main(args: Array[String]): Unit = {
@@ -17,7 +20,7 @@ object Day05 {
       .min
   }
 
-  def part2(input: Input): Int = {
+  def part2(input: Input) = {
     val seedRanges = input.seeds
       .grouped(2)
       .map { case List(a, b) => (a, b) }
@@ -32,9 +35,25 @@ object Day05 {
       }
     }
 
+    // The non-parallel version - runs in approx. 30 seconds:
+    // Iterator
+    //   .from(0)
+    //   .find(canFindSeedFor)
+    //   .get
+
+    // Run in batches of 1 million numbers, checking those 1
+    // million numbers in parallel before checking the next million.
+    // Runs in approx. 7 seconds
     Iterator
-      .from(0)
-      .find(canFindSeedFor)
+      .unfold(0L)(start => {
+        val stop = start + 1_000_000 - 1
+        val res =
+          (start to stop).toArray.par.map(canFindSeedFor).indexWhere(identity)
+        val l = if res != -1 then Some(start + res) else None
+        Some(l, stop + 1)
+      })
+      .find(_.isDefined)
+      .get
       .get
   }
 }
