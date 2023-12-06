@@ -25,9 +25,11 @@ object Day06 {
 case class Race(time: Long, distance: Long) {
   def waysToBeat =
     val (x1, x2) = quadraticRoots(-1, time, -distance)
-    val min = if !x1.isInt then math.ceil(x1) else x1 + 1
-    val max = if !x2.isInt then math.floor(x2) else x2 - 1
-    max.toLong - min.toLong + 1
+    val min = math.min(x1, x2) match
+      case x if !x.isInt => math.ceil(x1).toLong
+      case x             => x.toLong + 1
+
+    time - 2 * min + 1
 }
 
 object Race {
@@ -39,11 +41,12 @@ object Race {
   }
 }
 
+// Assumes that two both roots exist
 def quadraticRoots(a: Long, b: Long, c: Long) = {
   val d = b * b - 4 * a * c
   val x1 = (-b + math.sqrt(d)) / (2 * a)
   val x2 = (-b - math.sqrt(d)) / (2 * a)
-  (math.min(x1, x2), math.max(x1, x2))
+  (x1, x2)
 }
 
 extension (f: Double) {
