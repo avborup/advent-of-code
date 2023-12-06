@@ -23,11 +23,11 @@ object Day06 {
 }
 
 case class Race(time: Long, distance: Long) {
-  // Function is symmetric across the middle peak at time/2
-  def waysToBeat = (1L to time)
-    .find(t => t * (time - t) > distance)
-    .map(time - 2 * _ + 1)
-    .get
+  def waysToBeat =
+    val (x1, x2) = quadraticRoots(-1, time, -distance)
+    val min = if !x1.isInt then math.ceil(x1) else x1 + 1
+    val max = if !x2.isInt then math.floor(x2) else x2 - 1
+    max.toLong - min.toLong + 1
 }
 
 object Race {
@@ -37,4 +37,15 @@ object Race {
 
     rows.next().zip(rows.next()).map({ case (t, d) => Race(t, d) })
   }
+}
+
+def quadraticRoots(a: Long, b: Long, c: Long) = {
+  val d = b * b - 4 * a * c
+  val x1 = (-b + math.sqrt(d)) / (2 * a)
+  val x2 = (-b - math.sqrt(d)) / (2 * a)
+  (math.min(x1, x2), math.max(x1, x2))
+}
+
+extension (f: Double) {
+  def isInt = (f - f.round).abs < 1e-9
 }
