@@ -23,7 +23,11 @@ object Day06 {
 }
 
 case class Race(time: Long, distance: Long) {
-  def waysToBeat = (0L to time).count(t => t * (time - t) > distance)
+  // Function is symmetric across the middle peak at time/2
+  def waysToBeat = (1L to time)
+    .find(t => t * (time - t) > distance)
+    .map(time - 2 * _ + 1)
+    .get
 }
 
 object Race {
