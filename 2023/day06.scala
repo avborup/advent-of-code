@@ -12,22 +12,24 @@ object Day06 {
   }
 
   def part1(races: List[Race]) = {
-    races
-      .map(r => (0 to r.time).count(t => t * (r.time - t) > r.distance))
-      .product
+    races.map(_.waysToBeat).product
   }
 
   def part2(races: List[Race]) = {
-    ()
+    val join = (nums: List[Long]) => nums.mkString.toLong
+    val race = Race(join(races.map(_.time)), join(races.map(_.distance)))
+    race.waysToBeat
   }
 }
 
-case class Race(time: Int, distance: Int)
+case class Race(time: Long, distance: Long) {
+  def waysToBeat = (0L to time).count(t => t * (time - t) > distance)
+}
 
 object Race {
   def parseRaces(input: String) = {
     val rows =
-      input.linesIterator.map(raw"\d+".r.findAllIn(_).map(_.toInt).toList)
+      input.linesIterator.map(raw"\d+".r.findAllIn(_).map(_.toLong).toList)
 
     rows.next().zip(rows.next()).map({ case (t, d) => Race(t, d) })
   }
