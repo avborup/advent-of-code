@@ -20,27 +20,23 @@ object Day07 {
   }
 
   def part2(hands: List[Hand]) = {
-    val games = hands.map(_.copy(useJokers = true)).sortWith(_.beats(_)).reverse
-
-    games.zipWithIndex
-      .map({ case (h, i) => h.winnings * (i + 1) })
-      .sum
+    part1(hands.map(_.copy(useJokers = true)))
   }
 }
 
 case class Hand(cards: String, winnings: Int, useJokers: Boolean = false) {
   def beats(other: Hand) = {
     List(
-      (c: Hand) => c.replaceJokers.nOfAKind(5),
-      (c: Hand) => c.replaceJokers.nOfAKind(4),
-      (c: Hand) => c.replaceJokers.fullHouse,
-      (c: Hand) => c.replaceJokers.nOfAKind(3),
-      (c: Hand) => c.replaceJokers.numPairs == 2,
-      (c: Hand) => c.replaceJokers.numPairs == 1
+      (c: Hand) => c.nOfAKind(5),
+      (c: Hand) => c.nOfAKind(4),
+      (c: Hand) => c.fullHouse,
+      (c: Hand) => c.nOfAKind(3),
+      (c: Hand) => c.numPairs == 2,
+      (c: Hand) => c.numPairs == 1
     )
       .foldLeft(None: Option[Boolean])((acc, f) =>
         acc.orElse(
-          (f(this), f(other)) match
+          (f(this.replaceJokers), f(other.replaceJokers)) match
             case (true, false)  => Some(true)
             case (false, true)  => Some(false)
             case (true, true)   => Some(beatsByFirstHighCard(other))
@@ -50,7 +46,7 @@ case class Hand(cards: String, winnings: Int, useJokers: Boolean = false) {
       .getOrElse(beatsByFirstHighCard(other))
   }
 
-  def histogram = cards.groupBy(identity).mapValues(_.length)
+  def histogram = cards.groupBy(identity).view.mapValues(_.length)
 
   def replaceJokers = {
     if (!useJokers) this
@@ -65,25 +61,10 @@ case class Hand(cards: String, winnings: Int, useJokers: Boolean = false) {
 
   def numPairs = histogram.filter(_._2 == 2).keys.size
 
-  def numeric = cards.map(c =>
-    if (c.isDigit) c.asDigit
-    else
-      c match {
-        case 'T' => 10
-        case 'J' => if !useJokers then 11 else 1
-        case 'Q' => 12
-        case 'K' => 13
-        case 'A' => 14
-      }
-  )
-
-  def highCard = cards.zip(numeric).maxBy(_._2)._1
-
   def fullHouse = {
-    histogram.filter(e => e._2 == 2 || e._2 == 3).toList match {
-      case List((ac, 3), (bc, 2)) => true
-      case List((ac, 2), (bc, 3)) => true
-      case _                      => false
+    histogram.values.filter(c => c == 2 || c == 3).toList match {
+      case List(3, 2) | List(2, 3) => true
+      case _                       => false
     }
   }
 
@@ -94,6 +75,15 @@ case class Hand(cards: String, winnings: Int, useJokers: Boolean = false) {
       .map({ case (a, b) => a > b })
       .getOrElse(false)
   }
+
+  def numeric = cards.map({
+    case c if c.isDigit => c.asDigit
+    case 'T'            => 10
+    case 'J'            => if !useJokers then 11 else 1
+    case 'Q'            => 12
+    case 'K'            => 13
+    case 'A'            => 14
+  })
 }
 
 object Input {
