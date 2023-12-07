@@ -20,7 +20,7 @@ object Day07 {
   }
 
   def part2(hands: List[Hand]) = {
-    val games = hands.map(toHand2).sortWith(_.beats(_)).reverse
+    val games = hands.map(_.copy(useJokers = true)).sortWith(_.beats(_)).reverse
 
     games.zipWithIndex
       .map({ case (h, i) => h.winnings * (i + 1) })
@@ -28,15 +28,15 @@ object Day07 {
   }
 }
 
-case class Hand(cards: String, winnings: Int) {
+case class Hand(cards: String, winnings: Int, useJokers: Boolean = false) {
   def beats(other: Hand) = {
     List(
-      (c: Hand) => c.nOfAKind(5),
-      (c: Hand) => c.nOfAKind(4),
-      (c: Hand) => c.fullHouse,
-      (c: Hand) => c.nOfAKind(3),
-      (c: Hand) => c.numPairs == 2,
-      (c: Hand) => c.numPairs == 1
+      (c: Hand) => c.replaceJokers.nOfAKind(5),
+      (c: Hand) => c.replaceJokers.nOfAKind(4),
+      (c: Hand) => c.replaceJokers.fullHouse,
+      (c: Hand) => c.replaceJokers.nOfAKind(3),
+      (c: Hand) => c.replaceJokers.numPairs == 2,
+      (c: Hand) => c.replaceJokers.numPairs == 1
     )
       .foldLeft(None: Option[Boolean])((acc, f) =>
         acc.orElse(
@@ -52,6 +52,15 @@ case class Hand(cards: String, winnings: Int) {
 
   def histogram = cards.groupBy(identity).mapValues(_.length)
 
+  def replaceJokers = {
+    if (!useJokers) this
+    else {
+      val mostOccurring =
+        histogram.filter(_._1 != 'J').maxByOption(_._2).getOrElse(('J', 5))._1
+      this.copy(cards = cards.replace('J', mostOccurring))
+    }
+  }
+
   def nOfAKind(n: Int) = histogram.filter(_._2 == n).keys.headOption.isDefined
 
   def numPairs = histogram.filter(_._2 == 2).keys.size
@@ -61,7 +70,7 @@ case class Hand(cards: String, winnings: Int) {
     else
       c match {
         case 'T' => 10
-        case 'J' => 11
+        case 'J' => if !useJokers then 11 else 1
         case 'Q' => 12
         case 'K' => 13
         case 'A' => 14
@@ -79,88 +88,6 @@ case class Hand(cards: String, winnings: Int) {
   }
 
   def beatsByFirstHighCard(other: Hand) = {
-    numeric
-      .zip(other.numeric)
-      .find({ case (a, b) => a != b })
-      .map({ case (a, b) => a > b })
-      .getOrElse(false)
-  }
-}
-
-def toHand2(h: Hand) = Hand2(h.cards, h.winnings)
-
-case class Hand2(cards: String, winnings: Int) {
-  def beats(other: Hand2) = {
-    List(
-      (c: Hand2) => c.nOfAKind(5),
-      (c: Hand2) => c.nOfAKind(4),
-      (c: Hand2) => c.fullHouse,
-      (c: Hand2) => c.nOfAKind(3),
-      (c: Hand2) => c.numPairs == 2,
-      (c: Hand2) => c.numPairs == 1
-    )
-      .foldLeft(None: Option[Boolean])((acc, f) =>
-        acc.orElse(
-          (f(this), f(other)) match
-            case (true, false)  => Some(true)
-            case (false, true)  => Some(false)
-            case (true, true)   => Some(beatsByFirstHighCard(other))
-            case (false, false) => None
-        )
-      )
-      .getOrElse(beatsByFirstHighCard(other))
-  }
-
-  def histogram = cards.groupBy(identity).mapValues(_.length)
-
-  def nOfAKind(n: Int) =
-    val hist = histogram
-    hist
-      .filter({
-        case (c, i) if c != 'J' => n <= (i + hist.getOrElse('J', 0))
-        case (c, i)             => n <= i
-      })
-      .headOption
-      .isDefined
-
-  def numPairs =
-    val hist = histogram
-    hist
-      .foldLeft((0, hist.getOrElse('J', 0)))({ case ((np, js), (c, i)) =>
-        if (i == 2) (np + 1, js)
-        else if (c != 'J' && js > 0) (np + 1, js - 1)
-        else (np, js)
-      })
-      ._1
-
-  def numeric = cards.map(c =>
-    if (c.isDigit) c.asDigit
-    else
-      c match {
-        case 'T' => 10
-        case 'J' => 1
-        case 'Q' => 12
-        case 'K' => 13
-        case 'A' => 14
-      }
-  )
-
-  def highCard = cards.zip(numeric).maxBy(_._2)._1
-
-  def fullHouse = {
-    val hist = histogram
-    hist.keys.toList
-      .combinations(2)
-      .exists({ case List(a, b) =>
-        (hist.getOrElse(a, 0), hist.getOrElse(b, 0)) match
-          case (an, bn) if a == 'J'         => 5 - bn <= an
-          case (an, bn) if b == 'J'         => 5 - an <= bn
-          case (an, bn) if an > 3 || bn > 3 => false
-          case (an, bn) => 5 - an - bn <= hist.getOrElse('J', 0)
-      })
-  }
-
-  def beatsByFirstHighCard(other: Hand2) = {
     numeric
       .zip(other.numeric)
       .find({ case (a, b) => a != b })
