@@ -12,17 +12,26 @@ object Day08 {
   }
 
   def part1(input: Input) = {
-    input.steps.takeWhile(_ != "ZZZ").size
+    input.stepsFrom("AAA").indexWhere(_ == "ZZZ")
   }
 
+  // Observation: all paths in the input enters a cycle right from the get-go.
+  // I.e. you reach a Z node every path-length'th step. Thus, the answer is the
+  // least common multiple of the path lengths.
+  //
+  // Does not work for the general case where there are no cycles!
   def part2(input: Input) = {
-    ()
+    val lengths = input.nodes.keys
+      .filter(_.endsWith("A"))
+      .map(n => input.stepsFrom(n).indexWhere(_.endsWith("Z")).toLong)
+
+    lengths.reduce(lcm)
   }
 }
 
 case class Input(instructions: String, nodes: Map[String, Node]) {
-  def steps = Iterator
-    .unfold(("AAA", 0))({ case (cur, i) =>
+  def stepsFrom(from: String) = Iterator
+    .unfold((from, 0))({ case (cur, i) =>
       val next = instructions(i % instructions.length) match {
         case 'L' => nodes(cur).left
         case 'R' => nodes(cur).right
@@ -50,3 +59,11 @@ object Input {
     Input(instructions, nodes)
   }
 }
+
+@annotation.tailrec
+def gcd(a: Long, b: Long): Long = b match {
+  case 0 => a
+  case n => gcd(b, a % b)
+}
+
+def lcm(a: Long, b: Long): Long = (a * b).abs / gcd(a, b)
