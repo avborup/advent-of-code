@@ -10,28 +10,26 @@ object Day09 {
     println(s"Part 1: ${part1(input)}")
     println(s"Part 2: ${part2(input)}")
 
-  def part1(histories: List[Sequence]) =
+  def part1(histories: List[Array[Int]]) =
     histories
-      .map(_.levels.map(_.numbers.last).sum)
+      .map(_.levels.map(_.last).sum)
       .sum
 
-  def part2(histories: List[Sequence]) =
+  def part2(histories: List[Array[Int]]) =
     histories
-      .map(_.levels.foldRight(0)(_.numbers.head - _))
+      .map(_.levels.foldRight(0)(_.head - _))
       .sum
 }
 
-case class Sequence(numbers: Array[Int]) {
+extension (sequence: Array[Int]) {
   def differences =
-    Sequence(
-      numbers
-        .sliding(2)
-        .map({ case Array(a, b) => b - a })
-        .toArray
-    )
+    sequence
+      .sliding(2)
+      .map({ case Array(a, b) => b - a })
+      .toArray
 
-  def levels = Seq.unfold(this)(s =>
-    if s.numbers.forall(_ == 0) then None
+  def levels = Seq.unfold(sequence)(s =>
+    if s.forall(_ == 0) then None
     else Some((s, s.differences))
   )
 }
@@ -41,5 +39,4 @@ object Input {
     input.linesIterator
       .map(_.split(" ").map(_.toInt).toArray)
       .toList
-      .map(Sequence(_))
 }
