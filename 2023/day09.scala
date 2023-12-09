@@ -12,18 +12,13 @@ object Day09 {
 
   def part1(input: Input) =
     input.histories
-      .map(h => {
-        val sequences = Seq.unfold(h)(s => {
-          if s.numbers.forall(_ == 0) then None
-          else Some((s, s.differences))
-        })
-
-        sequences.map(_.numbers.last).sum
-      })
+      .map(_.levels.map(_.numbers.last).sum)
       .sum
 
   def part2(input: Input) =
-    ()
+    input.histories
+      .map(_.levels.foldRight(0)(_.numbers.head - _))
+      .sum
 }
 
 case class Sequence(numbers: Array[Int]) {
@@ -34,6 +29,11 @@ case class Sequence(numbers: Array[Int]) {
         .map({ case Array(a, b) => b - a })
         .toArray
     )
+
+  def levels = Seq.unfold(this)(s =>
+    if s.numbers.forall(_ == 0) then None
+    else Some((s, s.differences))
+  )
 }
 
 case class Input(histories: List[Sequence])
