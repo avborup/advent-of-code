@@ -10,13 +10,13 @@ object Day09 {
     println(s"Part 1: ${part1(input)}")
     println(s"Part 2: ${part2(input)}")
 
-  def part1(input: Input) =
-    input.histories
+  def part1(histories: List[Sequence]) =
+    histories
       .map(_.levels.map(_.numbers.last).sum)
       .sum
 
-  def part2(input: Input) =
-    input.histories
+  def part2(histories: List[Sequence]) =
+    histories
       .map(_.levels.foldRight(0)(_.numbers.head - _))
       .sum
 }
@@ -36,15 +36,10 @@ case class Sequence(numbers: Array[Int]) {
   )
 }
 
-case class Input(histories: List[Sequence])
-
 object Input {
   def parse(input: String) =
-    val histories =
-      input.linesIterator
-        .map(_.split(" ").map(_.toInt).toArray)
-        .toList
-        .map(Sequence(_))
-
-    Input(histories)
+    input.linesIterator
+      .map(_.split(" ").map(_.toInt).toArray)
+      .toList
+      .map(Sequence(_))
 }
