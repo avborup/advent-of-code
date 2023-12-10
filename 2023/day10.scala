@@ -22,6 +22,9 @@ object Day10 {
       .groupBy(_._2)
       .map({ case (col, coords) => input.findEnclosedInColumn(col, coords) })
       .flatMap(identity)
+      .toSet
+
+    // printMap(input, path, enclosed)
 
     enclosed.size
 }
@@ -133,3 +136,30 @@ def goesWest(coord: Coord, map: Map[Coord, Char]) =
   map.get(coord) match
     case Some('-' | '7' | 'J') => true
     case _                     => false
+
+def printMap(input: Input, path: List[Coord], toHighlight: Set[Coord]) =
+  val maxR = input.map.keys.map(_._1).max
+  val minR = input.map.keys.map(_._1).min
+  val maxC = input.map.keys.map(_._2).max
+  val minC = input.map.keys.map(_._2).min
+
+  def pipeFromChar(c: Char) =
+    c match
+      case '|' => '║'
+      case '-' => '═'
+      case 'L' => '╚'
+      case 'J' => '╝'
+      case '7' => '╗'
+      case 'F' => '╔'
+      case _   => ???
+
+  (minR to maxR).foreach(r => {
+    (minC to maxC).foreach(c => {
+      val s =
+        if path.contains((r, c)) then pipeFromChar(input.map((r, c)))
+        else if toHighlight.contains((r, c)) then 'X'
+        else ' '
+      print(s)
+    })
+    println()
+  })
