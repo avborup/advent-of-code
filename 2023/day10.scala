@@ -16,10 +16,16 @@ object Day10 {
     Math.ceil(path.size / 2.0).toInt
 
   def part2(input: Input) =
-    ()
+    val path = input.findPath(input.start)
+
+    val enclosed = path
+      .groupBy(_._2)
+      .map({ case (col, coords) => input.findEnclosedInColumn(col, coords) })
+      .flatMap(identity)
+
+    enclosed.size
 }
 
-type Coord = (Int, Int)
 case class Input(map: Map[Coord, Char], start: Coord) {
   def findPath(start: Coord) =
     @annotation.tailrec
@@ -43,7 +49,37 @@ case class Input(map: Map[Coord, Char], start: Coord) {
       case _   => ???
 
     coords.filter(map.contains)
+
+  def findEnclosedInColumn(col: Int, pathCoordinatesInColumn: List[Coord]) =
+    def isConnected(p1: Coord, p2: Coord) =
+      ((p1._1 + 1) to p2._1).forall(r => goesNorth((r, col), map))
+
+    def flipsDirection(p1: Coord, p2: Coord) =
+      def check(a: Coord, b: Coord) =
+        goesWest(a, map) && goesEast(b, map)
+      check(p1, p2) || check(p2, p1)
+
+    def findBetween(p1: Coord, p2: Coord) =
+      (p1._1 + 1 to p2._1 - 1).map((_, col))
+
+    val edges = pathCoordinatesInColumn
+      .sortBy(_._1)
+      .filter(c => goesEast(c, map) || goesWest(c, map))
+
+    edges
+      .sliding(2)
+      .foldLeft((Set[Coord](), true))({
+        case ((found, isInside), List(p1, p2)) =>
+          if isConnected(p1, p2) then
+            if flipsDirection(p1, p2) then (found, isInside)
+            else (found, !isInside)
+          else if isInside then (found ++ findBetween(p1, p2), !isInside)
+          else (found, !isInside)
+      })
+      ._1
 }
+
+type Coord = (Int, Int)
 
 extension (coord: Coord) {
   def north = (coord._1 - 1, coord._2)
@@ -76,24 +112,24 @@ object Input {
       else ???
 
     Input(map.updated(start, startKind), start)
-
-  def goesSouth(coord: Coord, map: Map[Coord, Char]) =
-    map.get(coord) match
-      case Some('|' | '7' | 'F') => true
-      case _                     => false
-
-  def goesNorth(coord: Coord, map: Map[Coord, Char]) =
-    map.get(coord) match
-      case Some('|' | 'L' | 'J') => true
-      case _                     => false
-
-  def goesEast(coord: Coord, map: Map[Coord, Char]) =
-    map.get(coord) match
-      case Some('-' | 'F' | 'L') => true
-      case _                     => false
-
-  def goesWest(coord: Coord, map: Map[Coord, Char]) =
-    map.get(coord) match
-      case Some('-' | '7' | 'J') => true
-      case _                     => false
 }
+
+def goesSouth(coord: Coord, map: Map[Coord, Char]) =
+  map.get(coord) match
+    case Some('|' | '7' | 'F') => true
+    case _                     => false
+
+def goesNorth(coord: Coord, map: Map[Coord, Char]) =
+  map.get(coord) match
+    case Some('|' | 'L' | 'J') => true
+    case _                     => false
+
+def goesEast(coord: Coord, map: Map[Coord, Char]) =
+  map.get(coord) match
+    case Some('-' | 'F' | 'L') => true
+    case _                     => false
+
+def goesWest(coord: Coord, map: Map[Coord, Char]) =
+  map.get(coord) match
+    case Some('-' | '7' | 'J') => true
+    case _                     => false
