@@ -18,11 +18,7 @@ object Day10 {
   def part2(input: Input) =
     val path = input.findPath(input.start)
 
-    val enclosed = path
-      .groupBy(_._2)
-      .map({ case (col, coords) => input.findEnclosedInColumn(col, coords) })
-      .flatMap(identity)
-      .toSet
+    val enclosed = input.findEnclosedBy(path)
 
     // printMap(input, path, enclosed)
 
@@ -52,6 +48,13 @@ case class Input(map: Map[Coord, Char], start: Coord) {
       case _   => ???
 
     coords.filter(map.contains)
+
+  def findEnclosedBy(path: List[Coord]) =
+    path
+      .groupBy(_._2)
+      .map({ case (col, coords) => findEnclosedInColumn(col, coords) })
+      .flatMap(identity)
+      .toSet
 
   def findEnclosedInColumn(col: Int, pathCoordinatesInColumn: List[Coord]) =
     def isConnected(p1: Coord, p2: Coord) =
