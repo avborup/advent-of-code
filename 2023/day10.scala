@@ -12,28 +12,8 @@ object Day10 {
     println(s"Part 2: ${part2(input)}")
 
   def part1(input: Input) =
-    val initialQueue = Queue(input.start)
-    val initialVisited = Set[Coord]()
-    val initialDistances = Map[Coord, Int](input.start -> 0)
-
-    val dists = Stream
-      .unfold((initialQueue, initialVisited, initialDistances))({
-        case (queue, _, _) if queue.isEmpty => None
-        case (queue, visited, distances) =>
-          val (coord, rest) = queue.dequeue
-          val dist = distances(coord)
-          val next = input
-            .adjacent(coord)
-            .filterNot(visited.contains)
-            .foldLeft((rest, visited, distances)) { case ((q, v, d), c) =>
-              (q.enqueue(c), v + c, d.updated(c, dist + 1))
-            }
-
-          Some((distances, next))
-      })
-      .last
-
-    dists.values.max
+    val path = input.findPath(input.start)
+    Math.ceil(path.size / 2.0).toInt
 
   def part2(input: Input) =
     ()
@@ -41,6 +21,15 @@ object Day10 {
 
 type Coord = (Int, Int)
 case class Input(map: Map[Coord, Char], start: Coord) {
+  def findPath(start: Coord) =
+    @annotation.tailrec
+    def dfs(v: Coord, visited: Set[Coord], path: List[Coord]): List[Coord] =
+      adjacent(v).filterNot(visited.contains).headOption match
+        case Some(c) => dfs(c, visited + c, c :: path)
+        case None    => path
+
+    dfs(start, Set(start), List(start))
+
   // Be aware, for a pipe setup like -L, the - will go to the L, even though
   // they're not actually connected.
   def adjacent(coord: Coord) =
