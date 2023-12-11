@@ -5,29 +5,32 @@ import scala.io.Source.fromFile
 object Day11 {
   def main(args: Array[String]) =
     val file = args.lift(0).getOrElse("inputs/day11.txt")
-    val input = Input.parse(fromFile(file).mkString)
+    val input = fromFile(file).mkString
 
     println(s"Part 1: ${part1(input)}")
     println(s"Part 2: ${part2(input)}")
 
-  def part1(input: Input) =
-    input.galaxies.toList
+  def part1(input: String) =
+    Input.parse(input, 2).summedDistances
+
+  def part2(input: String) =
+    Input.parse(input, 1_000_000).summedDistances
+}
+
+case class Input(galaxies: Set[Coord]) {
+  def summedDistances =
+    galaxies.toList
       .combinations(2)
       .map { case List((r1, c1), (r2, c2)) =>
         Math.abs(r1 - r2) + Math.abs(c1 - c2)
       }
       .sum
-
-  def part2(input: Input) =
-    ()
 }
 
-case class Input(galaxies: Set[Coord])
-
-type Coord = (Int, Int)
+type Coord = (Long, Long)
 
 object Input {
-  def parse(input: String) =
+  def parse(input: String, expansionSize: Int) =
     val rows = input.linesIterator.toList
     val cols = rows.transpose
 
@@ -36,12 +39,12 @@ object Input {
 
     val galaxies = input.linesIterator.zipWithIndex
       .foldLeft((Set[Coord](), 0)) { case ((galaxies, r), (line, i)) =>
-        if emptyRows.contains(i) then (galaxies, r + 2)
+        if emptyRows.contains(i) then (galaxies, r + expansionSize)
         else
           val cols = line.zipWithIndex.foldLeft((galaxies, 0)) {
             case ((galaxies, c), (symbol, j)) =>
               symbol match
-                case _ if emptyCols.contains(j) => (galaxies, c + 2)
+                case _ if emptyCols.contains(j) => (galaxies, c + expansionSize)
                 case '.'                        => (galaxies, c + 1)
                 case s                          => (galaxies + ((r, c)), c + 1)
           }
