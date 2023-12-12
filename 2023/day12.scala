@@ -8,7 +8,7 @@ object Day12 {
     println(s"Part 2: ${part2(input)}")
 
   def part1(input: List[Row]) =
-    input.withNumberOfConfigs.sum
+    input.map(_.numberOfConfigs).sum
 
   def part2(input: List[Row]) =
     input
@@ -18,69 +18,44 @@ object Day12 {
           groups = List.fill(5)(row.groups).flatten
         )
       )
-      .withNumberOfConfigs
+      .map(_.numberOfConfigs)
       .sum
 }
 
-extension (rows: List[Row]) {
-  def withNumberOfConfigs =
-    rows
-      .foldLeft((List.empty[Long], Map.empty: Memo))({
-        case ((acc, memo), row) =>
-          val (res, updatedMemo) = row.cfgs(memo = memo)
-          (res :: acc, updatedMemo)
-      })
-      ._1
-}
-
-type Memo = Map[(String, List[Int], Int), Long]
-
 case class Row(springs: String, groups: List[Int]) {
-  def cfgs(
-      i: Int = 0,
-      remaining: List[Int] = this.groups,
-      curLength: Int = 0,
-      memo: Memo = Map.empty
-  ): (Long, Memo) =
-    val memoKey = (springs.substring(i), remaining, curLength)
+  def numberOfConfigs = cfgs((0, groups, 0))
 
-    if memo.contains(memoKey) then return (memo(memoKey), memo)
+  type Args = (Int, List[Int], Int)
+  type Key = (String, List[Int], Int)
 
+  val cfgs = Memoized[Args, Key, Long](
+    key = args => (springs.substring(args._1), args._2, args._3),
+    compute = args => cfgsInner.tupled(args)
+  )
+
+  def cfgsInner(i: Int, remaining: List[Int], curLength: Int): Long =
     if i == springs.length then
       remaining match
-        case List(r) if r == curLength => return (1, memo)
-        case Nil if curLength == 0     => return (1, memo)
-        case _                         => return (0, memo)
+        case List(r) if r == curLength => return 1
+        case Nil if curLength == 0     => return 1
+        case _                         => return 0
 
-    def memoized(res: (Long, Memo)) = (res._1, res._2 + (memoKey -> res._1))
-
-    lazy val expandGroup = memoized {
-      cfgs(i + 1, remaining, curLength + 1, memo)
-    }
-    lazy val nextGroup = memoized {
-      cfgs(i + 1, remaining.tail, 0, memo)
-    }
-    lazy val skip = memoized {
-      cfgs(i + 1, remaining, 0, memo)
-    }
-    lazy val expandOrSkip =
-      val (r1, memo1) = expandGroup
-      val (r2, memo2) = cfgs(i + 1, remaining, 0, memo1)
-      memoized { (r1 + r2, memo2) }
+    lazy val expandGroup = cfgs((i + 1, remaining, curLength + 1))
+    lazy val nextGroup = cfgs((i + 1, remaining.tail, 0))
+    lazy val skip = cfgs((i + 1, remaining, 0))
 
     val groupIsFull = remaining.headOption.exists(_ == curLength)
-    val invalid = (0L, memo)
 
     springs(i) match
-      case '#' if groupIsFull                         => invalid
+      case '#' if groupIsFull                         => 0
       case '#'                                        => expandGroup
       case '.' if groupIsFull                         => nextGroup
       case '.' if curLength == 0                      => skip
-      case '.' if curLength > 0                       => invalid
+      case '.' if curLength > 0                       => 0
       case '?' if groupIsFull                         => nextGroup
-      case '?' if remaining.isEmpty && curLength > 0  => invalid
+      case '?' if remaining.isEmpty && curLength > 0  => 0
       case '?' if remaining.isEmpty && curLength == 0 => skip
-      case '?' if curLength == 0                      => expandOrSkip
+      case '?' if curLength == 0                      => expandGroup + skip
       case '?' if curLength > 0                       => expandGroup
 }
 
@@ -94,4 +69,18 @@ object Input {
         Row(parts(0), groups)
       )
       .toList
+}
+
+case class Memoized[A, K, V](
+    var memo: Map[K, V] = Map.empty[K, V],
+    key: A => K,
+    compute: A => V
+) {
+  def apply(a: A): V =
+    memo.get(key(a)) match
+      case Some(v) => v
+      case None =>
+        val v = compute(a)
+        memo = memo + (key(a) -> v)
+        v
 }
