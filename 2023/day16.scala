@@ -12,7 +12,17 @@ object Day16 {
     input.energize().size
 
   def part2(input: Input) =
-    ()
+    val maxR = input.grid.keys.map(_._1).max
+    val maxC = input.grid.keys.map(_._2).max
+
+    val edgeTiles = input.grid.keys
+      .filter({ case (r, c) => r == 0 || r == maxR || c == 0 || c == maxC })
+
+    val configurations = edgeTiles.flatMap(tile =>
+      List(tile -> (0, 1), tile -> (0, -1), tile -> (1, 0), tile -> (-1, 0))
+    )
+
+    configurations.map(config => input.energize(Queue(config)).size).max
 }
 
 type Coord = (Int, Int)
