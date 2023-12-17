@@ -11,29 +11,27 @@ def adj(v, part):
     (r, c), dir, steps = v
     reachable = []
 
-    dcw, dccw = (dir[1], -dir[0]), (-dir[1], dir[0])
-    left, right, straight = [(r + d[0], c + d[1]) for d in [dcw, dccw, dir]]
+    def add_reachable(dir, new_steps):
+        v = (r + dir[0], c + dir[1])
+        if v[0] >= 0 and v[0] < h and v[1] >= 0 and v[1] < w:
+            reachable.append(((v, dir, new_steps), grid[v[0]][v[1]]))
 
     if part == 2 and steps < 4:
-        if straight[0] >= 0 and straight[0] < h and straight[1] >= 0 and straight[1] < w:
-            reachable.append(((straight, dir, steps + 1),
-                              grid[straight[0]][straight[1]]))
+        add_reachable(dir, steps + 1)
         return reachable
 
     max_steps = 3 if part == 1 else 10
-    if steps < max_steps and straight[0] >= 0 and straight[0] < h and straight[1] >= 0 and straight[1] < w:
-        reachable.append(((straight, dir, steps + 1),
-                         grid[straight[0]][straight[1]]))
-    if left[0] >= 0 and left[0] < h and left[1] >= 0 and left[1] < w:
-        reachable.append(((left, dcw, 1), grid[left[0]][left[1]]))
-    if right[0] >= 0 and right[0] < h and right[1] >= 0 and right[1] < w:
-        reachable.append(((right, dccw, 1), grid[right[0]][right[1]]))
+    if steps < max_steps:
+        add_reachable(dir, steps + 1)
+
+    add_reachable((dir[1], -dir[0]), 1)
+    add_reachable((-dir[1], dir[0]), 1)
 
     return reachable
 
 
 def dijkstra(S, T, part):
-    INF = 10**18
+    INF = float('inf')
     dist = defaultdict(lambda: INF)
     pq = []
 
@@ -41,6 +39,7 @@ def dijkstra(S, T, part):
         if dst < dist[i]:
             dist[i] = dst
             push(pq, (dst, i))
+
     add((S, (1, 0), 0), 0)
     add((S, (0, 1), 0), 0)
 
