@@ -9,27 +9,12 @@ object Day18 {
   def part1(input: List[Instruction]) =
     val path = tracePath(input)
 
-    // Pick's theorem: https://en.wikipedia.org/wiki/Pick%27s_theorem
-    //
-    // States that A = i + b/2 - 1
-    //
-    // We want number of points in the trench + number of points in the
-    // interior. Thus, we are looking for i + b.
-    //
-    // b is just the number of points in the trench path. Then we need to
-    // find i. Assume some A, then we can solve for i:
-    //
-    //       A     = i + b/2 - 1
-    //    => A - i = b/2 - 1
-    //    =>    -i = b/2 - A - 1
-    //    =>     i = -b/2 + A + 1
-    //
-    // Here, A (the sub-area of the polygon) can be found using the
-    // shoelace formula.
-    val a = shoelace(path).toLong
-    val b = perimeter(path)
-    val i = -b / 2 + a + 1
-    i + b
+    // About the "half the perimeter plus one": The points on the path
+    // represent the bottom-left corner of each #. So the area doesn't cover
+    // all tiles. But all that is missing are the cells above and to the right
+    // of that polygon on the border, which equals all the right border #'s and
+    // the top border #'s, plus one. Thanks to Andreas Björklund.
+    shoelace(path).toLong + perimeter(path) / 2 + 1
 
   def part2(input: List[Instruction]) =
     val corrected = input.map(_.useHexadecimalInstruction)
