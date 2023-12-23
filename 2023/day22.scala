@@ -6,34 +6,50 @@ object Day22 {
     println(s"Part 1: ${part1(input)}")
     println(s"Part 2: ${part2(input)}")
 
-  def part1(input: List[Brick]) =
-    findSafeToDisintegrate(input).size
+  def part1(bricks: List[Brick]) =
+    val stack = buildBrickStack(bricks)
 
-  def part2(input: List[Brick]) =
-    ()
-}
-
-def findSafeToDisintegrate(input: List[Brick]) =
-  val bricks = input.sortBy(_.min.z)
-  val stack = bricks.foldLeft(BrickStack())(_.place(_))
-
-  bricks
-    .filter(brick =>
-      lazy val willNotLetAnythingFall = stack
+    bricks.count(brick =>
+      val willNotLetAnythingFall = stack
         .supports(brick.id)
-        .forall(s =>
-          stack.supports.exists({ case (id, supporting) =>
-            id != brick.id && supporting.contains(s)
-          })
+        .forall(s => stack.supportedBy(s).exists(id => id != brick.id))
+
+      willNotLetAnythingFall || stack.supports(brick.id).isEmpty
+    )
+
+  def part2(bricks: List[Brick]) =
+    val stack = buildBrickStack(bricks)
+
+    def dfs(
+        cur: Int,
+        disintegrated: Set[Int],
+        visited: Set[Int]
+    ): (Set[Int], Set[Int]) =
+      if visited.contains(cur) then return (disintegrated, visited)
+
+      val toDisintegrate = stack
+        .supports(cur)
+        .filter(id =>
+          stack.supportedBy(id).forall(id => disintegrated.contains(id))
         )
 
-      stack.supports(brick.id).size == 0 || willNotLetAnythingFall
-    )
+      toDisintegrate.foldLeft((disintegrated ++ toDisintegrate, visited + cur))(
+        (acc, cur) => dfs(cur, acc._1, acc._2)
+      )
+
+    def disintegrate(v: Int) = dfs(v, disintegrated = Set(v), Set.empty)._1 - v
+
+    bricks.map(b => disintegrate(b.id).size).sum
+}
+
+def buildBrickStack(input: List[Brick]) =
+  val bricks = input.sortBy(_.min.z)
+  bricks.foldLeft(BrickStack())(_.place(_))
 
 case class BrickStack(
     zHeights: Map[(Int, Int), Int] = Map.empty.withDefaultValue(0),
     currentColumnSupport: Map[(Int, Int), Int] = Map.empty,
-    bricks: List[Brick] = List.empty,
+    supportedBy: Map[Int, Set[Int]] = Map.empty.withDefaultValue(Set.empty),
     supports: Map[Int, Set[Int]] = Map.empty.withDefaultValue(Set.empty)
 ):
   def place(brick: Brick) =
@@ -44,18 +60,17 @@ case class BrickStack(
       max = brick.max.copy(z = height + 1 + brick.max.z - brick.min.z)
     )
 
-    val supportingBricks =
-      baseCoords
-        .filter(zHeights(_) == height)
-        .map(currentColumnSupport.get(_))
-        .flatten
-        .toSet
+    val supportingBricks = baseCoords
+      .filter(zHeights(_) == height)
+      .map(currentColumnSupport.get(_))
+      .flatten
+      .toSet
 
     this.copy(
       zHeights = zHeights ++ baseCoords.map(_ -> fallenBrick.max.z).toMap,
-      bricks = fallenBrick :: bricks,
       currentColumnSupport =
         currentColumnSupport ++ baseCoords.map(_ -> fallenBrick.id).toMap,
+      supportedBy = supportedBy + (fallenBrick.id -> supportingBricks),
       supports = supports ++ (supportingBricks.map(id =>
         id -> (supports(id) + fallenBrick.id)
       ))
