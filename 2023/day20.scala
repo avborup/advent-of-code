@@ -26,8 +26,35 @@ object Day20 {
 
     lows * highs
 
+  // For this to make sense, see the graph visualisation in day20-figure.
   def part2(input: Input) =
-    ()
+    // Input has single &-parent to rx named ft
+    val rxSource = input.wires.filter(_._2.contains("rx")).map(_._1).head
+    // Input has four independent &-parents to ft that are independent clusters
+    // out of the broadcaster (i.e. they are not connected to each other).
+    val numClusters =
+      input.modules(rxSource).asInstanceOf[Conjunction].inputs.size
+
+    val cycles =
+      LazyList
+        .unfold((1, input, Map.empty[String, Int]))({
+          case (_, _, cycles) if cycles.size == numClusters => None
+          case (i, input, cycles) =>
+            val (pulses, newInput) = pushButton(input)
+
+            val foundCycles = pulses
+              .collect({ case (from, High, `rxSource`) => from })
+              .filterNot(cycles.contains)
+
+            val newCycles = foundCycles.foldLeft(cycles)((cycles, source) =>
+              cycles.updated(source, i)
+            )
+
+            Some((newCycles, (i + 1, newInput, newCycles)))
+        })
+        .last
+
+    cycles.values.foldLeft(1L)(lcm(_, _))
 }
 
 def pushButton(input: Input) =
@@ -81,18 +108,7 @@ case class Input(
     broadcaster: List[String] = List.empty,
     modules: Map[String, Module] = Map.empty,
     wires: Map[String, List[String]] = Map.empty.withDefaultValue(List.empty)
-) {
-  def print() =
-    println(s"broadcaster -> ${broadcaster.mkString(", ")}")
-    modules.foreach((name, module) => {
-      val sym = module match
-        case FlipFlop(_)    => "%"
-        case Conjunction(_) => "&"
-      val outputs = wires(name).mkString(", ")
-      println(s"$sym$name -> $outputs")
-    })
-    println()
-}
+)
 
 object Input {
   def read() =
@@ -127,3 +143,11 @@ object Input {
 
     input.copy(modules = modulesWithConjunctionInputs)
 }
+
+@annotation.tailrec
+def gcd(a: Long, b: Long): Long = b match {
+  case 0 => a
+  case n => gcd(b, a % b)
+}
+
+def lcm(a: Long, b: Long): Long = (a * b).abs / gcd(a, b)
