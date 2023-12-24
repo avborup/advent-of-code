@@ -10,11 +10,11 @@ object Day23 {
     map.longestPath
 
   def part2(map: Input) =
-    ()
+    map.compressed.longestPath
 }
 
-case class Input(
-    map: Map[Vec, Char],
+case class Graph(
+    adj: Map[Vec, List[(Vec, Int)]],
     start: Vec,
     dest: Vec
 ) {
@@ -26,25 +26,80 @@ case class Input(
 
       visited += v
       val longest =
-        adjacent(v)
-          .filterNot(visited.contains)
-          .map(dfs(_, curLen + 1))
+        adj(v)
+          .filterNot(a => visited.contains(a._1))
+          .map(a => dfs(a._1, curLen + a._2))
           .maxOption
           .getOrElse(0)
       visited -= v
       longest
 
     dfs(start, 0)
+}
 
-  def adjacent(v: Vec) =
+case class Input(
+    map: Map[Vec, Char],
+    start: Vec,
+    dest: Vec,
+    width: Int,
+    height: Int
+) {
+  def longestPath =
+    val adjList = map
+      .filter({ case (_, c) => c != '#' })
+      .foldLeft(Map.empty[Vec, List[(Vec, Int)]])((acc, v) =>
+        acc + (v._1 -> adjacent(v._1).map((_, 1)))
+      )
+
+    Graph(adjList, start, dest).longestPath
+
+  def adjacent(v: Vec, ignoreSlopes: Boolean = false) =
     val dirs = map(v) match
-      case '.' => List((-1, 0), (1, 0), (0, -1), (0, 1))
+      case v if v == '.' || ignoreSlopes =>
+        List((-1, 0), (1, 0), (0, -1), (0, 1))
       case '^' => List((-1, 0))
       case 'v' => List((1, 0))
       case '<' => List((0, -1))
       case '>' => List((0, 1))
 
     dirs.map(v + _).filter(map.contains).filter(map(_) != '#')
+
+  def compressed =
+    var inDegree = scala.collection.mutable.Map[Vec, Int]()
+    for r <- 0 to height - 1 do
+      for c <- 0 to width - 1 do
+        val v = (r, c)
+        if map(v) != '#' then
+          adjacent(v, ignoreSlopes = true).foreach(a =>
+            inDegree(a) = inDegree.getOrElse(a, 0) + 1
+          )
+
+    def findNextIntersections(
+        v: Vec,
+        distToSource: Int,
+        visited: Set[Vec]
+    ): (List[(Vec, Int)], Set[Vec]) =
+      val newVisited = visited + v
+      adjacent(v, ignoreSlopes = true)
+        .filterNot(visited.contains)
+        .foldLeft((List.empty[(Vec, Int)], newVisited))((acc, a) =>
+          if inDegree(a) != 2 then ((a, distToSource + 1) :: acc._1, acc._2)
+          else
+            val (found, visited) =
+              findNextIntersections(a, distToSource + 1, acc._2)
+            (found ::: acc._1, visited)
+        )
+
+    val intersections = inDegree
+      .filter(_._2 != 2)
+      .keys
+    val adjList = intersections
+      .foldLeft(Map.empty[Vec, List[(Vec, Int)]])((acc, v) =>
+        val (found, _) = findNextIntersections(v, 0, Set.empty)
+        acc + (v -> found)
+      )
+
+    Graph(adjList, start, dest)
 }
 
 object Input {
@@ -69,7 +124,7 @@ object Input {
       .toList
       .sorted
 
-    Input(grid, start, dest)
+    Input(grid, start, dest, width, height)
 }
 
 type Vec = (Int, Int)
