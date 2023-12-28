@@ -22,7 +22,20 @@ object Day24 {
       .size
 
   def part2(input: List[Hail]) =
-    ()
+    val h0 = input(0)
+    val centered =
+      input.map(h => h.copy(pos = h.pos - h0.pos, vel = h.vel - h0.vel))
+
+    val h1 = centered(1)
+    val normal = (h1.pos + h1.vel).cross(h1.pos)
+
+    val (intersection2, d2) = line_plane_intersection(normal, centered(2))
+    val (intersection3, d3) = line_plane_intersection(normal, centered(3))
+
+    val dir = (intersection3 - intersection2) / (d3 - d2) + h0.vel
+    val pos = intersection2 - ((dir - h0.vel) * d2) + h0.pos
+
+    pos.x + pos.y + pos.z
 }
 
 case class Hail(id: Int, pos: Vec, vel: Vec):
@@ -48,19 +61,51 @@ case class Hail(id: Int, pos: Vec, vel: Vec):
   def position(t: Long) =
     (pos._1 + vel._1 * t, pos._2 + vel._2 * t, pos._3 + vel._3 * t)
 
-  def time_from_pos(x: Double, y: Double) =
+  def time_from_pos(x: BigDecimal, y: BigDecimal) =
     (x - pos._1) / vel._1
 
-type Vec = (Long, Long, Long)
+type Vec = (BigDecimal, BigDecimal, BigDecimal)
+
 extension (v: Vec)
+  def x = v._1
+  def y = v._2
+  def z = v._3
+
   def +(other: Vec) =
-    (v._1 + other._1, v._2 + other._2, v._3 + other._3)
+    (v.x + other.x, v.y + other.y, v.z + other.z)
+
+  def -(other: Vec) =
+    (v.x - other.x, v.y - other.y, v.z - other.z)
+
+  def *(scale: BigDecimal) =
+    (v.x * scale, v.y * scale, v.z * scale)
+
+  def /(div: BigDecimal) =
+    (v.x / div, v.y / div, v.z / div)
+
+  def cross(other: Vec) =
+    (
+      v.y * other.z - v.z * other.y,
+      v.z * other.x - v.x * other.z,
+      v.x * other.y - v.y * other.x
+    )
+
+  def dot(other: Vec) =
+    v.x * other.x + v.y * other.y + v.z * other.z
+
+def line_plane_intersection(
+    normal: Vec,
+    hail: Hail
+) =
+  val zero: Vec = (0, 0, 0)
+  val d = (zero - hail.pos).dot(normal) / hail.vel.dot(normal)
+  (hail.pos + (hail.vel * d), d)
 
 object Input {
   def read() =
     scala.io.Source.stdin.mkString.linesIterator.zipWithIndex
       .map({ case (line, i) =>
-        val c = raw"-?\d+".r.findAllIn(line).map(_.toLong).toList
+        val c = raw"-?\d+".r.findAllIn(line).map(BigDecimal(_)).toList
         Hail(i, (c(0), c(1), c(2)), (c(3), c(4), c(5)))
       })
       .toList
