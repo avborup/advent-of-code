@@ -6,28 +6,13 @@ use List::Util qw(sum);
 
 sub part_1 {
   my @nums = @_;
-  my $count = 0;
-
-  for (my $i = 0; $i < @nums - 1; $i++) {
-    my ($first, $second) = @nums[$i, $i + 1];
-
-    if ($second > $first) {
-      $count++;
-    }
-  }
-
-  return $count;
+  scalar grep { $nums[$_ + 1] > $nums[$_] } 0 .. $#nums - 1
 }
 
 sub part_2 {
   my @nums = @_;
-
-  my @sums = ();
-  for (my $i = 0; $i < @nums - 2; $i++) {
-    push(@sums, sum(@nums[$i .. $i + 2]));
-  }
-
-  return part_1(@sums);
+  my @sums = map { sum(@nums[$_ .. $_ + 2]) } 0 .. $#nums - 2;
+  part_1(@sums)
 }
 
 my @nums = map { chomp; $_ } <>;
