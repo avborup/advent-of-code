@@ -21,7 +21,7 @@ sub part_2 {
   "?"
 }
 
-my @input = map { chomp; $_ } <>;
+chomp(my @input = <>);
 
 print Dumper(\@input);
 
