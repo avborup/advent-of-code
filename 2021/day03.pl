@@ -15,47 +15,39 @@ sub part_1 {
   my $num_bits = scalar @gamma_bits;
   my $epsilon = (~$gamma) & ((2 << $num_bits - 1) - 1);
 
-  $gamma * $epsilon
+  return $gamma * $epsilon;
 }
 
 sub part_2 {
-  my @input = @_;
-  my @matrix = map { [split //, $_] } @input;
-
   my $find_rating = sub {
-    my $bit = shift @_;
-    my @valid = @matrix;
+    my ($bit, $input) = @_;
+    my @valid = map { [split //, $_] } @$input;
 
-    for (my $i=0; $i <= $#{$matrix[0]}; $i++) {
+    for (my $i=0; $i <= $#{$valid[0]}; $i++) {
       my @transposed = transpose(@valid);
 
       my $ones = scalar grep { $_ eq 1 } @{$transposed[$i]};
-      my $zeros = scalar grep { $_ eq 0 } @{$transposed[$i]};
+      my $zeros = @{$transposed[$i]} - $ones;
 
-      my $to_keep = undef;
-      if ($ones == $zeros) {
-        $to_keep = $bit;
-      } elsif ($ones > $zeros) {
-        $to_keep = $bit == 1 ? 1 : 0;
-      } else {
-        $to_keep = $bit == 1 ? 0 : 1;
-      }
+      my $to_keep = $ones == $zeros
+        ? $bit
+        : $ones > $zeros
+          ? ($bit ? 1 : 0)
+          : ($bit ? 0 : 1);
 
       @valid = grep { @$_[$i] == $to_keep } @valid;
 
-      if (scalar @valid <= 1) {
-        last;
-      }
+      last if @valid <= 1;
     }
 
-    my $row = join('', @{$valid[0]});
-    oct("0b" . $row)
+    return oct("0b" . join('', @{$valid[0]}));
   };
 
-  my $oxygen_rating = $find_rating->(1);
-  my $co2_rating = $find_rating->(0);
+  my @input = @_;
+  my $oxygen_rating = $find_rating->(1, \@input);
+  my $co2_rating = $find_rating->(0, \@input);
 
-  $oxygen_rating * $co2_rating
+  return $oxygen_rating * $co2_rating;
 }
 
 sub transpose {
