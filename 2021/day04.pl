@@ -6,14 +6,28 @@ use List::Util qw(sum);
 
 sub part_1 {
   my ($draws, $boards) = @_;
+  return find_last_winner($draws, $boards, 1);
+}
+
+sub part_2 {
+  my ($draws, $boards) = @_;
+  return find_last_winner($draws, $boards, scalar @$boards);
+}
+
+sub find_last_winner {
+  my ($draws, $boards, $max_winners) = @_;
 
   my %seen = ();
+  my %winners = ();
   my ($winning_draw, $winning_board) = (undef, undef);
 
   DRAWS: foreach my $draw (@$draws) {
+    last if keys %winners >= $max_winners;
     $seen{$draw} = 1;
 
-    foreach my $board (@$boards) {
+    for my $b (0 .. $#$boards) {
+      next if $winners{$b};
+      my $board = $boards->[$b];
 
       for (my $i = 0; $i < 5; $i++) {
         my @row = @$board[$i * 5 .. ($i + 1) * 5 - 1];
@@ -22,19 +36,15 @@ sub part_1 {
         my $has_win = (grep { exists $seen{$_} } @row) == 5 || (grep { exists $seen{$_} } @col) == 5;
 
         if ($has_win) {
-          $winning_draw = $draw;
-          $winning_board = $board;
-          last DRAWS;
+          ($winning_draw, $winning_board) = ($draw, $board);
+          $winners{$b} = 1;
+          last;
         }
       }
     }
   }
 
   return $winning_draw * sum(grep { !exists $seen{$_} } @$winning_board);
-}
-
-sub part_2 {
-  "?"
 }
 
 sub parse {
