@@ -8,8 +8,8 @@ my $sol_file = "day$day.pl";
 
 open(my $fh, '>', $sol_file) or die $!;
 print $fh <<'EOF';
-#!/usr/bin/perl -w
-use strict; use warnings;
+#!/usr/bin/env perl -w
+use strict;
 
 use Data::Dumper;
 
@@ -22,9 +22,6 @@ sub part_2 {
 }
 
 chomp(my @input = <>);
-
-print Dumper(\@input);
-
 print("Part 1: ", part_1(@input), "\n");
 print("Part 2: ", part_2(@input), "\n");
 EOF
