@@ -10,7 +10,10 @@ sub part_1 {
 }
 
 sub part_2 {
-  "?"
+  my @matrix = map { [split //] } @_;
+  my $step = 1;
+  $step++ while simulate_step(\@matrix) != 100;
+  return $step;
 }
 
 sub simulate_step {
