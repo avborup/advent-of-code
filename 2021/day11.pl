@@ -20,22 +20,11 @@ sub simulate_step {
   my ($matrix) = @_;
   my ($R, $C) = ($#{$matrix}, $#{$matrix->[0]});
 
-  for my $r (0..$R) {
-    for my $c (0..$C) {
-      $matrix->[$r][$c]++;
-    }
-  }
+  for my $r (0..$R) { for my $c (0..$C) { $matrix->[$r][$c]++; } }
 
-  my @flash_queue;
-  for my $r (0..$R) {
-    for my $c (0..$C) {
-      if ($matrix->[$r][$c] > 9) {
-        push @flash_queue, [$r, $c];
-      }
-    }
-  }
-
+  my @flash_queue = map { my $r = $_; map { [$r, $_] } grep { $matrix->[$r][$_] > 9 } 0..$C } 0..$R;
   my @flashed = map { [(0) x $C] } 0..$R;
+
   my $num_flashed = 0;
   while (@flash_queue) {
     my ($r, $c) = @{shift @flash_queue};
@@ -47,7 +36,6 @@ sub simulate_step {
 
     foreach my $dir ([-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]) {
       my ($nr, $nc) = ($r + $dir->[0], $c + $dir->[1]);
-
       next if $nr < 0 || $nr > $R || $nc < 0 || $nc > $C;
       next if $flashed[$nr][$nc];
 
