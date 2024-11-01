@@ -4,29 +4,29 @@ use strict;
 use Data::Dumper;
 
 sub part_1 {
-  my ($edges) = @_;
-  return find_num_paths($edges);
+  return find_num_paths(shift, 1);
 }
 
 sub part_2 {
-  "?"
+  return find_num_paths(shift, 2);
 }
 
 sub find_num_paths {
-  my ($edges) = @_;
-  my @stack = (["start", {}]);
+  my ($edges, $init_max) = @_;
+  my @stack = (["start", {}, $init_max]);
 
   my $num_paths = 0;
   while (@stack) {
-    my ($v, $visited) = @{pop @stack};
+    my ($v, $visited, $cur_max) = @{pop @stack};
 
-    ($num_paths++ && next) if $v eq "end";
-    next if ($v eq "start" && keys %$visited > 0);
+    ++$num_paths && next if $v eq "end";
+    next if $v eq "start" && %$visited;
 
     foreach my $adj (@{$edges->{$v}}) {
-      my $new_num_small = ($visited->{$adj} || 0) + ($adj =~ /[a-z]+/);
-      next if $new_num_small > 1;
-      push @stack, [$adj, {%$visited, $adj => $new_num_small}];
+      my $new_num_small = ($visited->{$adj} // 0) + ($adj =~ /[a-z]+/);
+      next if $new_num_small > $cur_max;
+      my $new_max = $new_num_small == $cur_max ? 1 : $cur_max;
+      push @stack, [$adj, {%$visited, $adj => $new_num_small}, $new_max];
     }
   }
 
