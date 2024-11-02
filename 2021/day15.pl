@@ -5,8 +5,27 @@ use Heap::MinMax;
 use Data::Dumper;
 
 sub part_1 {
+  return dijkstra(@_);
+}
+
+sub part_2 {
   my ($risks) = @_;
-  my ($R, $C) = ($#$risks, $#{$risks->[0]});
+  my $extended;
+  my ($R, $C) = ($#$risks + 1, $#{$risks->[0]} + 1);
+
+  for my $r (0..5*$R-1) {
+    for my $c (0..5*$C-1) {
+      my $risk = $risks->[$r % $R][$c % $C] + int($r / $R) + int($c / $C);
+      $extended->[$r][$c] = ($risk - 1) % 9 + 1;
+    }
+  }
+
+  return dijkstra($extended);
+}
+
+sub dijkstra {
+  my ($risks) = @_;
+  my ($R, $C) = ($#$risks + 1, $#{$risks->[0]} + 1);
   my @dist = map { [map { 'inf' } @$_] } @$risks;
 
   my $pq = Heap::MinMax->new(fcompare => sub {
@@ -27,7 +46,7 @@ sub part_1 {
     }
   }
 
-  return $dist[$R][$C];
+  return $dist[-1][-1];
 }
 
 sub neighbours {
@@ -35,13 +54,9 @@ sub neighbours {
   my @neighbours;
   foreach my $dir ([-1, 0], [1, 0], [0, -1], [0, 1]) {
     my ($nr, $nc) = ($r + $dir->[0], $c + $dir->[1]);
-    push @neighbours, [$nr, $nc] unless $nr < 0 || $nr > $R || $nc < 0 || $nc > $C;
+    push @neighbours, [$nr, $nc] unless $nr < 0 || $nr >= $R || $nc < 0 || $nc >= $C;
   }
   return @neighbours;
-}
-
-sub part_2 {
-  "?"
 }
 
 my $matrix = [map { chomp; [split //] } <>];
