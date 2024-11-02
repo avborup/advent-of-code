@@ -1,32 +1,42 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
+use List::Util qw(min max);
 
 sub part_1 {
   my ($template, $rules) = @_;
-
-  my $polymer = [split //, $template];
-  $polymer = polymerize($polymer, $rules) for 1..10;
-
-  my %counts; $counts{$_}++ for @$polymer;
-  my @by_freq = sort { $counts{$a} <=> $counts{$b} } keys %counts;
-
-  return $counts{$by_freq[-1]} - $counts{$by_freq[0]};
+  return solve($template, $rules, 10);
 }
 
 sub part_2 {
-  "?"
+  my ($template, $rules) = @_;
+  return solve($template, $rules, 40);
+}
+
+sub solve {
+  my ($template, $rules, $steps) = @_;
+  my @template = split //, $template;
+  my ($pairs, $counts);
+
+  $pairs->{"$template[$_-1]$template[$_]"}++ for 1..$#template;
+  $counts->{$_}++ for @template;
+
+  ($pairs, $counts) = polymerize($pairs, $counts, $rules) for 1..$steps;
+
+  return max(values %$counts) - min(values %$counts);
 }
 
 sub polymerize {
-  my ($polymer, $rules) = @_;
-  my @out = ($polymer->[0]);
-  for my $i (1..$#{$polymer}) {
-    my ($l, $r) = @$polymer[$i-1..$i];
-    push @out, $rules->{"$l$r"} // "", $r;
+  my ($pairs, $counts, $rules) = @_;
+  my %new_pairs;
+  for my $pair (keys %$pairs) {
+    my ($l, $r) = split //, $pair;
+    my $new = $rules->{"$l$r"};
+    $new_pairs{"$l$new"} += $pairs->{$pair};
+    $new_pairs{"$new$r"} += $pairs->{$pair};
+    $counts->{$new} += $pairs->{$pair};
   }
-  return \@out;
+  return (\%new_pairs, $counts);
 }
 
 sub parse_input {
