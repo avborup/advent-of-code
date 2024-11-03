@@ -2,19 +2,19 @@
 use strict;
 
 use Data::Dumper;
-use List::Util qw(sum);
+use List::Util qw(sum product min max);
 
 sub part_1 {
-  my $input = shift;
-  my @bits = map { split(//, sprintf("%04b", hex)) } split(//, $input);
-  my $packet = consume_packet(\@bits);
-
+  my $packet = shift;
   return sum(map { $_->{version} } flatten($packet)); 
 }
 
 sub part_2 {
-  "?"
+  my $packet = shift;
+  return eval_packet($packet);
 }
+
+use constant { LITERAL => 4, SUM => 0, PRODUCT => 1, MIN => 2, MAX => 3, GREATER => 5, LESS => 6, EQUAL => 7 };
 
 sub consume_packet {
   my ($bits) = @_;
@@ -57,17 +57,40 @@ sub consume_packet {
   return {
     version => $version,
     type => $type,
-    value => $type == 4 ? $consume_literal->() : $consume_operator->(),
+    value => $type == LITERAL ? $consume_literal->() : $consume_operator->(),
   };
+}
+
+sub eval_packet {
+  my $packet = shift;
+  return $packet->{value} if $packet->{type} == LITERAL;
+
+  my $op = $packet->{type};
+  my @args = map { eval_packet($_) } @{$packet->{value}};
+
+  return $op == SUM ? sum(@args) :
+         $op == PRODUCT ? product(@args) :
+         $op == MIN ? min(@args) :
+         $op == MAX ? max(@args) :
+         $op == GREATER ? $args[0] > $args[1] :
+         $op == LESS ? $args[0] < $args[1] :
+         $op == EQUAL ? $args[0] == $args[1] :
+         die "Unknown operator: $op";
 }
 
 sub flatten {
   my $packet = shift;
-  return $packet if $packet->{type} == 4;
+  return $packet if $packet->{type} == LITERAL;
   my $unvalued = { %$packet }; delete $unvalued->{value};
   return ($unvalued, map { flatten($_) } @{$packet->{value}});
 }
 
-chomp(my $input = <>);
-print("Part 1: ", part_1($input), "\n");
-print("Part 2: ", part_2($input), "\n");
+sub parse_input {
+  chomp(my $input = <>);
+  my @bits = map { split(//, sprintf("%04b", hex)) } split(//, $input);
+  return consume_packet(\@bits);
+}
+
+my $packet = parse_input();
+print("Part 1: ", part_1($packet), "\n");
+print("Part 2: ", part_2($packet), "\n");
