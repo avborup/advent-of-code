@@ -3,7 +3,8 @@ use strict;
 
 use Data::Dumper;
 use POSIX qw(ceil floor);
-use List::Util qw(reduce);
+use List::Util qw(reduce max);
+use Algorithm::Permute;
 
 sub part_1 {
   my @snails = @_;
@@ -12,7 +13,16 @@ sub part_1 {
 }
 
 sub part_2 {
-  "?"
+  my @snails = @_;
+  my $max = 0;
+
+  my $perms = Algorithm::Permute->new(\@snails, 2);
+  while (my @nums = $perms->next) {
+    my $res = add(@nums);
+    $max = max($max, magnitude($res));
+  }
+
+  return $max;
 }
 
 sub add {
