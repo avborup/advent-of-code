@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-
-[lib]
-path = "utils.rs"
+itertools = "0.13.0"
 
 [[bin]]
 name = "day01"
