@@ -1,15 +1,10 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
-
 my @reports = map { chomp; [split / /] } <>;
-
-my $num_safe = 0;
 
 sub is_safe {
   my ($report) = @_;
-
   my ($all_increasing, $all_decreasing, $all_good_diff) = (1, 1, 1);
 
   for my $n (0..$#{$report}-1) {
@@ -22,22 +17,12 @@ sub is_safe {
   return ($all_increasing || $all_decreasing) && $all_good_diff;
 }
 
-my $part1 = 0;
-for my $report (@reports) {
-  $part1++ if is_safe($report);
-}
+my $part1 = grep { is_safe($_) } @reports;
 
-my $part2 = 0;
-for my $report (@reports) {
-  $part2++, next if is_safe($report);
+my $part2 = grep {
+  my $r = $_;
+  is_safe($r) || grep { is_safe([@{$r}[0..$_-1, $_+1..$#$r]]) } 0..$#$r;
+} @reports;
 
-  for my $i (0..$#{$report}) {
-    my @copy = @{$report};
-    splice(@copy, $i, 1);
-
-    $part2++, last if is_safe(\@copy);
-  }
-}
-
-print("Part 1: ", $part1, "\n");
-print("Part 2: ", $part2, "\n");
+print("Part 1: $part1\n");
+print("Part 2: $part2\n");
