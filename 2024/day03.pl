@@ -5,11 +5,10 @@ my $input = join("", <>);
 
 my ($part1, $part2) = (0, 0);
 my $do = 1;
-while ($input =~ /(mul|do|don't)\((?:(\d+),(\d+))?\)/g) {
-  $do = 1 if $1 eq "do";
-  $do = 0 if $1 eq "don't";
-
-  if ($1 eq "mul") {
+while ($input =~ /(do\(\)|don't\(\)|mul\((\d+),(\d+)\))/g) {
+  if    ($1 eq "do()")    { $do = 1; }
+  elsif ($1 eq "don't()") { $do = 0; }
+  else {
     $part1 += $2 * $3;
     $part2 += $2 * $3 if $do;
   }
