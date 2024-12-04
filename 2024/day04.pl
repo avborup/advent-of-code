@@ -1,14 +1,12 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
-
 my $matrix = [map { chomp; [split //] } <>];
 my ($R, $C) = (scalar(@$matrix), scalar(@{$matrix->[0]}));
 
 my ($part1, @pattern) = (0, split(//, "XMAS"));
-for my $r (0..$#{$matrix}) {
-  for my $c (0..$#{$matrix->[$r]}) {
+for my $r (0..$R-1) {
+  for my $c (0..$C-1) {
     foreach my $dir ([-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]) {
       my $xmas = 1;
       for my $s (0..$#pattern) {
@@ -23,21 +21,14 @@ for my $r (0..$#{$matrix}) {
 }
 
 my $part2 = 0;
-for my $r (1..$#{$matrix}-1) {
-  for my $c (1..$#{$matrix->[$r]}-1) {
+for my $r (1..$R-2) {
+  for my $c (1..$C-2) {
     next if $matrix->[$r][$c] ne "A";
 
-    my @pairs = (
-      [[-1, -1], [1, 1]],
-      [[-1, 1], [1, -1]],
-      [[1, 1], [-1, -1]],
-      [[1, -1], [-1, 1]],
-    );
-
     my $matches = 0;
-    foreach my $pair (@pairs) {
-      my $m = $matrix->[$r + $pair->[0][0]][$c + $pair->[0][1]];
-      my $s = $matrix->[$r + $pair->[1][0]][$c + $pair->[1][1]];
+    foreach my $corner ([-1, -1], [-1, 1], [1, 1], [1, -1]) {
+      my $m = $matrix->[$r + $corner->[0]][$c + $corner->[1]];
+      my $s = $matrix->[$r - $corner->[0]][$c - $corner->[1]];
       $matches++ if $m eq "M" && $s eq "S";
     }
 
