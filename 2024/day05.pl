@@ -1,43 +1,26 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
+my ($rules, $updates, %cmp) = split /\n\n/, join("", <>);
 
-my ($edges, $lists) = split /\n\n/, join("", <>);
+my @lists = map { [split /,/] } split /\n/, $updates;
+$cmp{"$1|$2"} = -1, $cmp{"$2|$1"} = 1 while $rules =~ /(\d+)\|(\d+)/g;
 
-$lists = [map { [split /,/] } split /\n/, $lists];
-
-my $part1 = 0;
-my $part2 = 0;
-
-my %before;
-push @{$before{$2}}, $1 while ($edges =~ /(\d+)\|(\d+)/g);
-
-my %cmp;
-$cmp{"$1|$2"} = -1, $cmp{"$2|$1"} = 1 while ($edges =~ /(\d+)\|(\d+)/g);
-
-for my $list (@$lists) {
+my ($part1, $part2) = (0, 0);
+for my $list (@lists) {
   my $valid = 1;
-
   for my $i (0..$#$list) {
     for my $j ($i+1..$#$list) {
-      my $a = $list->[$i];
-      my $b = $list->[$j];
-
-      if (grep { $_ eq $b } @{$before{$a}}) {
-        $valid = 0;
-        last;
-      }
+      my ($a, $b) = ($list->[$i], $list->[$j]);
+      $valid = 0, last if $cmp{"$b|$a"} == -1;
     }
-
-    last if !$valid;
   }
 
   if ($valid) {
-    $part1 += $list->[int(($#$list + 1) / 2)];;
+    $part1 += $list->[$#$list / 2];
   } else {
     my @ordered = sort { $cmp{"$a|$b"} // $cmp{"$b|$a"} // 0 } @{$list};
-    $part2 += $ordered[int(($#ordered + 1) / 2)];;
+    $part2 += $ordered[$#ordered / 2];
   }
 }
 
