@@ -3,9 +3,8 @@ use strict;
 
 use Data::Dumper;
 
-use List::Util qw(first);
-
 my ($edges, $lists) = split /\n\n/, join("", <>);
+
 $lists = [map { [split /,/] } split /\n/, $lists];
 
 my $part1 = 0;
@@ -13,6 +12,9 @@ my $part2 = 0;
 
 my %before;
 push @{$before{$2}}, $1 while ($edges =~ /(\d+)\|(\d+)/g);
+
+my %cmp;
+$cmp{"$1|$2"} = -1, $cmp{"$2|$1"} = 1 while ($edges =~ /(\d+)\|(\d+)/g);
 
 for my $list (@$lists) {
   my $valid = 1;
@@ -32,8 +34,10 @@ for my $list (@$lists) {
   }
 
   if ($valid) {
-    my $mid = $list->[int(($#$list + 1) / 2)];
-    $part1 += $mid;
+    $part1 += $list->[int(($#$list + 1) / 2)];;
+  } else {
+    my @ordered = sort { $cmp{"$a|$b"} // $cmp{"$b|$a"} // 0 } @{$list};
+    $part2 += $ordered[int(($#ordered + 1) / 2)];;
   }
 }
 
