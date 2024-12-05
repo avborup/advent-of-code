@@ -4,7 +4,7 @@ use strict;
 my ($rules, $updates, %cmp) = split /\n\n/, join("", <>);
 
 my @lists = map { [split /,/] } split /\n/, $updates;
-$cmp{"$1|$2"} = -1, $cmp{"$2|$1"} = 1 while $rules =~ /(\d+)\|(\d+)/g;
+$cmp{"$1|$2"} = 1 while $rules =~ /(\d+)\|(\d+)/g;
 
 my ($part1, $part2) = (0, 0);
 for my $list (@lists) {
@@ -12,14 +12,14 @@ for my $list (@lists) {
   for my $i (0..$#$list) {
     for my $j ($i+1..$#$list) {
       my ($a, $b) = ($list->[$i], $list->[$j]);
-      $valid = 0, last if $cmp{"$b|$a"} == -1;
+      $valid = 0, last if $cmp{"$b|$a"};
     }
   }
 
   if ($valid) {
     $part1 += $list->[$#$list / 2];
   } else {
-    my @ordered = sort { $cmp{"$a|$b"} // $cmp{"$b|$a"} // 0 } @{$list};
+    my @ordered = sort { $cmp{"$a|$b"} ? -1 : $cmp{"$b|$a"} ? 1 : 0 } @$list;
     $part2 += $ordered[$#ordered / 2];
   }
 }
