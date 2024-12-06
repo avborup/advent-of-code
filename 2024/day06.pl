@@ -43,15 +43,14 @@ sub walk {
 }
 
 my ($looped, $visited) = walk();
-my $part1 = keys %$visited;
-print("Part 1: $part1\n");
+print("Part 1: ", scalar keys %$visited, "\n");
 
 my $part2 = 0;
-for my $r (0..$R-1) {
-  for my $c (0..$C-1) {
-    next if $matrix->[$r][$c] ne ".";
-    my ($looped, $visited) = walk($r, $c);
-    $part2++ if $looped;
-  }
+for my $v (keys %$visited) {
+  my ($r, $c) = split /,/, $v;
+  next if $r == $start->[0] && $c == $start->[1];
+
+  my ($looped) = walk($r, $c);
+  $part2++ if $looped;
 }
 print("Part 2: $part2\n");
