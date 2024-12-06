@@ -1,40 +1,33 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
-
-my $matrix = [map { chomp; [split //] } <>];
-my ($R, $C) = (scalar(@$matrix), scalar(@{$matrix->[0]}));
+my $grid = [map { chomp; [split //] } <>];
+my ($R, $C) = (scalar(@$grid), scalar(@{$grid->[0]}));
 
 my $start;
 for my $r (0..$R-1) {
   for my $c (0..$C-1) {
-    if ($matrix->[$r][$c] eq "^") {
+    if ($grid->[$r][$c] eq "^") {
       $start = [$r, $c];
     }
   }
 }
 
+sub in_bounds { my ($r, $c) = @_; return $r >= 0 && $r < $R && $c >= 0 && $c < $C; }
+
 sub walk {
   my ($obs_r, $obs_c) = (shift // -1, shift // -1);
 
-  my (%visited, %states);
-
   my ($r, $c) = @$start;
-  my ($dr, $dc) = (-1, 0);
-
+  my ($dr, $dc, %visited) = (-1, 0);
   while (1) {
-    return (0, \%visited) if $r < 0 || $r >= $R || $c < 0 || $c >= $C;
-    return (1, \%visited) if exists $states{"$r,$c,$dr,$dc"};
+    return (0, \%visited) if !in_bounds($r, $c);
+    return (1, \%visited) if exists $visited{"$r,$c"}{"$dr,$dc"};
 
-    $visited{"$r,$c"} = 1;
-    $states{"$r,$c,$dr,$dc"} = 1;
+    $visited{"$r,$c"}{"$dr,$dc"} = 1;
 
     my ($nr, $nc) = ($r + $dr, $c + $dc);
-    if (
-      !($nr < 0 || $nr >= $R || $nc < 0 || $nc >= $C) &&
-      $matrix->[$nr][$nc] eq "#" || ($nr == $obs_r && $nc == $obs_c)
-    ) {
+    if (in_bounds($nr, $nc) && $grid->[$nr][$nc] eq "#" || ($nr == $obs_r && $nc == $obs_c)) {
       ($dr, $dc) = ($dc, -$dr);
     } else {
       ($r, $c) = ($nr, $nc);
@@ -46,10 +39,8 @@ my ($looped, $visited) = walk();
 print("Part 1: ", scalar keys %$visited, "\n");
 
 my $part2 = 0;
-for my $v (keys %$visited) {
+for my $v (grep { $_ ne "$start->[0],$start->[1]" } keys %$visited) {
   my ($r, $c) = split /,/, $v;
-  next if $r == $start->[0] && $c == $start->[1];
-
   my ($looped) = walk($r, $c);
   $part2++ if $looped;
 }
