@@ -1,48 +1,26 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
+chomp(my @input = <>);
 
-sub part_1 {
-  my @input = @_;
-
-  my $sum = 0;
-  for my $line (@input) {
-    my ($goal, $nums) = split /: /, $line;
-    my @nums = split / /, $nums;
-
-    my $valid = brute($goal, $nums[0], \@nums, 1);
-
-    print "\n";
-
-    $sum += $goal if $valid;
-  }
-
-  return $sum;
+my ($part1, $part2) = (0, 0);
+for my $line (@input) {
+  my ($goal, @args) = $line =~ /(\d+)/g;
+  $part1 += $goal if brute($goal, $args[0], \@args, 1, 0);
+  $part2 += $goal if brute($goal, $args[0], \@args, 1, 1);
 }
 
 sub brute {
-  my ($goal, $acc, $nums, $i) = @_;
+  my ($goal, $acc, $nums, $i, $or) = @_;
 
-  print "Goal: $goal, Acc: $acc, Nums: @$nums\n";
-
-  if ($i > $#$nums && $goal == $acc) {
-    return 1;
-  }
-
-  if ($i > $#$nums) {
-  return 0;
-  }
+  return 1 if $i > $#$nums && $goal == $acc;
+  return 0 if $i > $#$nums;
 
   my $num = $nums->[$i];
-
-  return brute($goal, $acc + $num, $nums, $i + 1) || brute($goal, $acc * $num, $nums, $i + 1);
+  my $valid = brute($goal, $acc + $num, $nums, $i + 1, $or) || brute($goal, $acc * $num, $nums, $i + 1, $or);
+  $valid ||= brute($goal, "$acc$num", $nums, $i + 1, $or) if $or;
+  return $valid;
 }
 
-sub part_2 {
-  "?"
-}
-
-chomp(my @input = <>);
-print("Part 1: ", part_1(@input), "\n");
-print("Part 2: ", part_2(@input), "\n");
+print("Part 1: $part1\n");
+print("Part 2: $part2\n");
