@@ -28,9 +28,12 @@ for $a (keys %antennas) {
       my ($dr, $dc) = ($r2 - $r1, $c2 - $c1);
       my ($nr, $nc) = ($r2 + $dr, $c2 + $dc);
 
-      next if $nr < 0 || $nr >= $R || $nc < 0 || $nc >= $C;
-
-      $antinodes{"$nr,$nc"} = 1;
+      my $s = 1;
+      for ($s = -200; $s <= 200; $s++) {
+        my ($nr, $nc) = ($r2 + $s * $dr, $c2 + $s * $dc);
+        next if $nr < 0 || $nr >= $R || $nc < 0 || $nc >= $C;
+        $antinodes{"$nr,$nc"} = 1;
+      }
     }
   }
 }
