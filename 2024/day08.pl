@@ -1,58 +1,34 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
-
-my ($part1, $part2) = (0, 0);
-
 my $grid = [map { chomp; [split //] } <>];
 my ($R, $C) = (scalar(@$grid), scalar(@{$grid->[0]}));
 
 my %antennas;
 for my $r (0..$R-1) {
   for my $c (0..$C-1) {
-    if ($grid->[$r][$c] ne "." && $grid->[$r][$c] ne "#") {
-      push @{$antennas{$grid->[$r][$c]}}, [$r, $c];
-    }
+    push @{$antennas{$grid->[$r][$c]}}, [$r, $c] if $grid->[$r][$c] ne ".";
   }
 }
 
-my %antinodes;
+sub add {
+  my ($into, $r, $c) = @_;
+  $into->{"$r,$c"} = 1 if $r >= 0 && $r < $R && $c >= 0 && $c < $C;
+}
+
+my (%part1, %part2);
 for $a (keys %antennas) {
   for my $i (0..$#{$antennas{$a}}) {
-    for my $j (0..$#{$antennas{$a}}) {
-      next if $i == $j;
-      my ($r1, $c1) = @{$antennas{$a}[$i]};
-      my ($r2, $c2) = @{$antennas{$a}[$j]};
-
+    for my $j ($i+1..$#{$antennas{$a}}) {
+      my ($r1, $c1, $r2, $c2) = (@{$antennas{$a}[$i]}, @{$antennas{$a}[$j]});
       my ($dr, $dc) = ($r2 - $r1, $c2 - $c1);
-      my ($nr, $nc) = ($r2 + $dr, $c2 + $dc);
 
-      my $s = 1;
-      for ($s = -200; $s <= 200; $s++) {
-        my ($nr, $nc) = ($r2 + $s * $dr, $c2 + $s * $dc);
-        next if $nr < 0 || $nr >= $R || $nc < 0 || $nc >= $C;
-        $antinodes{"$nr,$nc"} = 1;
-      }
+      add(\%part1, $r2 + $dr, $c2 + $dc);
+      add(\%part1, $r2 - 2*$dr, $c2 - 2*$dc);
+      add(\%part2, $r2 + $_*$dr, $c2 + $_*$dc) for -$R..$R;
     }
   }
 }
 
-
-for my $r (0..$R-1) {
-  for my $c (0..$C-1) {
-    if ($grid->[$r][$c] ne ".") {
-      print $grid->[$r][$c];
-    } elsif (exists $antinodes{"$r,$c"}) {
-      print "#";
-    } else {
-      print ".";
-    }
-  }
-  print "\n";
-}
-
-
-$part1 = scalar(keys %antinodes);
-print("Part 1: $part1\n");
-print("Part 2: $part2\n");
+print("Part 1: ", scalar keys %part1, "\n");
+print("Part 2: ", scalar keys %part2, "\n");
