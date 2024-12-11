@@ -5,49 +5,38 @@ use Data::Dumper;
 use List::Util qw(sum);
 
 my @stones = <> =~ /(\d+)/g;
-
 print("Part 1: ", solve(25), "\n");
 print("Part 2: ", solve(75), "\n");
 
 sub solve {
-  my %nums;
-  $nums{$_}++ for @stones;
+  my %counts;
+  $counts{$_}++ for @stones;
 
   my $iters = shift;
   for my $i (1..$iters) {
-    my %new_nums;
-
-    for my $stone (keys %nums) {
-      for my $new_stone (new_stones($stone)) {
-        $new_nums{$new_stone} += $nums{$stone};
-      }
+    my %new_counts;
+    foreach my $stone (keys %counts) {
+      $new_counts{$_} += $counts{$stone} for new_stones($stone);
     }
-
-    %nums = %new_nums;
+    %counts = %new_counts;
   }
 
-  return sum values %nums;
+  return sum values %counts;
 }
 
 sub new_stones {
   my $stone = shift;
-
-  if ($stone == 0) {
-    return (1);
-  }
-  elsif (digits($stone) % 2 == 0) {
-    my @l = split("", $stone);
-    my $lefthalf = int(join("", @l[0..(scalar(@l)/2)-1]));
-    my $righthalf = int(join("", @l[scalar(@l)/2..$#l]));
-    return ($lefthalf, $righthalf);
-  }
-  else {
-    return ($stone * 2024);
-  }
+  return 1 if ($stone == 0);
+  return split_half($stone) if digits($stone) % 2 == 0;
+  return $stone * 2024;
 }
 
-sub digits  { 
-    my $n = shift; 
-    my $l = log($n) / log(10); 
-    return int($l) + 1;
+sub split_half {
+  my $n = shift;
+  my $half_digits = digits($n) / 2;
+  my $left = int($n / 10 ** $half_digits);
+  my $right = $n % 10 ** $half_digits;
+  return ($left, $right);
 }
+
+sub digits  { int(log(shift) / log(10)) + 1 }
