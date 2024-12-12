@@ -2,8 +2,7 @@
 use strict;
 
 use Data::Dumper;
-use List::Util qw(sum);
-use Math::ConvexHull qw/convex_hull/;
+use List::Util qw(sum min first);
 
 my $grid = [map { chomp; [split //] } <>];
 my ($R, $C) = (scalar(@$grid), scalar(@{$grid->[0]}));
@@ -18,11 +17,17 @@ for my $r (0..$R-1) {
   }
 }
 
-print Dumper(\@regions);
-
 for my $region (@regions) {
-  $part1 += build_fence($region);
+  my $area = scalar(@{$region->{points}});
+  my $perimeter = sum values %{$region->{perimeter}};
+  my $sides = count_sides($region);
+
+  $part1 += $area * $perimeter;
+  $part2 += $area * $sides;
 }
+
+print("Part 1: $part1\n");
+print("Part 2: $part2\n");
 
 sub bfs{
   my ($pos) = @_;
@@ -47,30 +52,37 @@ sub bfs{
         next;
       }
 
-      next if $visited{"$nr,$nc"};
-
-      push @queue, [$nr, $nc] ; #if $grid->[$nr][$nc] eq $kind;
+      push @queue, [$nr, $nc] unless $visited{"$nr,$nc"};
     }
   }
 
   return {kind=>$kind, perimeter=>\%perimeter, points=>\@region};
 }
 
-
-sub build_fence {
+sub count_sides {
   my ($region) = @_;
+  my $sides = 0;
 
-  my $area = scalar(@{$region->{points}});
+  foreach my $point (@{$region->{points}}) {
+    my ($r, $c) = @$point;
 
-  my $kind = $region->{kind};
-  # print Dumper($region->{kind}, $area, scalar keys %$perimeter, $perimeter);
+    foreach my $ver ([1, 0], [-1, 0]) {
+      foreach my $hor ([0, 1], [0, -1]) {
+        my ($vr, $vc) = ($r + $ver->[0], $c + $ver->[1]);
+        my ($hr, $hc) = ($r + $hor->[0], $c + $hor->[1]);
+        my ($dr, $dc) = ($r + $ver->[0] + $hor->[0], $c + $ver->[1] + $hor->[1]);
 
-  my $perimeter = sum values %{$region->{perimeter}};
+        my $ver_diff = !in_bounds($vr, $vc) || $grid->[$vr][$vc] ne $region->{kind};
+        my $hor_diff = !in_bounds($hr, $hc) || $grid->[$hr][$hc] ne $region->{kind};
+        my $diag_diff = !in_bounds($dr, $dc) || $grid->[$dr][$dc] ne $region->{kind};
 
-  print "$kind: $area * $perimeter = ", $area * $perimeter, "\n";
+        my $is_corner = ($ver_diff && $hor_diff) || (!$ver_diff && !$hor_diff && $diag_diff);
+        $sides++ if $is_corner;
+      }
+    }
+  }
 
-  return $area * $perimeter;
+  return $sides;
 }
 
-print("Part 1: $part1\n");
-print("Part 2: $part2\n");
+sub in_bounds { my ($r, $c) = @_; $r >= 0 && $r < $R && $c >= 0 && $c < $C }
