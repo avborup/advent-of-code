@@ -1,45 +1,51 @@
 #!/usr/bin/env perl -w
 use strict;
 
-use Data::Dumper;
-
-use Data::Dumper;
-use List::Util qw(sum min first);
-
-
 my @machines;
 my @blocks = split /\n\n/, join("", <>);
 for my $block (@blocks) {
   my ($ax, $ay) = $block =~ /Button A: X\+(\d+), Y\+(\d+)/;
   my ($bx, $by) = $block =~ /Button B: X\+(\d+), Y\+(\d+)/;
   my ($px, $py) = $block =~ /Prize: X=(\d+), Y=(\d+)/;
-  push @machines, {a=>[$ax, $ay], b=>[$bx, $by], prize=>[$px, $py]};
+  push @machines, [$ax, $ay, $bx, $by, $px, $py];
 }
 
-print Dumper(scalar @machines);
+sub solve {
+  my ($res, $offset) = (0, shift // 0);
+  for my $machine (@machines) {
+    my ($ax, $ay, $bx, $by, $px, $py) = @$machine;
+    ($px, $py) = ($px + $offset, $py + $offset);
 
-my ($part1, $part2) = (0, 0);
+    my $det = $ax*$by - $ay*$bx;
+    my $as = int(($by*$px - $bx*$py) / $det);
+    my $bs = int((-$ay*$px + $ax*$py) / $det);
 
-for my $machine (@machines) {
-  my ($as, $bs) = (undef, undef);
-  for my $a (0..100) {
-    for my $b (0..100) {
-      my ($px) = ($a * $machine->{a}[0] + $b * $machine->{b}[0]);
-      my ($py) = ($a * $machine->{a}[1] + $b * $machine->{b}[1]);
-
-      if ($px == $machine->{prize}[0] && $py == $machine->{prize}[1]) {
-        $as = min($a, $as // $a);
-        $bs = min($b, $bs // $b);
-        last;
-      }
-    }
+    my ($ex, $ey) = ($ax * $as + $bx * $bs, $ay * $as + $by * $bs);
+    $res += 3 * $as + $bs if $ex == $px && $ey == $py;
   }
-
-  if (defined $as && defined $bs) {
-    $part1 += 3 * $as + $bs;
-  }
+  return $res;
 }
 
+print("Part 1: ", solve(), "\n");
+print("Part 2: ", solve(10000000000000), "\n");
 
-print("Part 1: $part1\n");
-print("Part 2: $part2\n");
+=begin comment
+Equations:
+  1) px = ax*as + bx*bs
+  2) py = ay*as + by*bs
+
+Written as Ax = b:
+  [ ax, bx ] [ as ] = [ px ]
+  [ ay, by ] [ bs ]   [ py ]
+
+To solve, find the inverse (easy for 2x2 matrix):
+  A^-1 = 1/det(A) [ by, -bx ]
+                  [ -ay, ax ]
+
+  det(A) = ax*by - ay*bx
+
+So:
+  A^-1 * b = [ px ] = [ ( by*px - bx*py) / det(A) ]
+             [ py ]   [ (-ay*px + ax*py) / det(A) ]
+=end comment
+=cut
