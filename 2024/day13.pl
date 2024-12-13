@@ -1,14 +1,7 @@
 #!/usr/bin/env perl -w
 use strict;
 
-my @machines;
-my @blocks = split /\n\n/, join("", <>);
-for my $block (@blocks) {
-  my ($ax, $ay) = $block =~ /Button A: X\+(\d+), Y\+(\d+)/;
-  my ($bx, $by) = $block =~ /Button B: X\+(\d+), Y\+(\d+)/;
-  my ($px, $py) = $block =~ /Prize: X=(\d+), Y=(\d+)/;
-  push @machines, [$ax, $ay, $bx, $by, $px, $py];
-}
+my @machines = map { [$_ =~ /(\d+)/g] } split /\n\n/, join("", <>);
 
 sub solve {
   my ($res, $offset) = (0, shift // 0);
@@ -20,7 +13,7 @@ sub solve {
     my $as = int(($by*$px - $bx*$py) / $det);
     my $bs = int((-$ay*$px + $ax*$py) / $det);
 
-    my ($ex, $ey) = ($ax * $as + $bx * $bs, $ay * $as + $by * $bs);
+    my ($ex, $ey) = ($ax*$as + $bx*$bs, $ay*$as + $by*$bs);
     $res += 3 * $as + $bs if $ex == $px && $ey == $py;
   }
   return $res;
