@@ -38,7 +38,7 @@ To solve, find the inverse (easy for 2x2 matrix):
   det(A) = ax*by - ay*bx
 
 So:
-  A^-1 * b = [ px ] = [ ( by*px - bx*py) / det(A) ]
-             [ py ]   [ (-ay*px + ax*py) / det(A) ]
+  A^-1 * b = [ as ] = [ ( by*px - bx*py) / det(A) ]
+             [ bs ]   [ (-ay*px + ax*py) / det(A) ]
 =end comment
 =cut
