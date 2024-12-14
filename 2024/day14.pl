@@ -10,52 +10,84 @@ my ($W, $H) = (101, 103);
 my @robots;
 push @robots, [$_ =~ /(-?\d+)/g] while <>;
 
-print Dumper(\@robots);
+# part1();
+part2();
 
-draw_robots();
-print "\n";
-
-for my $r (1..100) {
-  for my $robot (@robots) {
-    my ($x, $y, $vx, $vy) = @$robot;
-    $robot->[0] = ($x + $vx) % $W;
-    $robot->[1] = ($y + $vy) % $H;
+sub part1 {
+  for my $r (1..100) {
+    move($_) for @robots;
   }
 
-  draw_robots();
-  print "\n\n";
+  my @quads = (0, 0, 0, 0);
+  for my $robot (@robots) {
+    my ($x, $y) = @$robot;
+    my ($midX, $midY) = (int($W/2), int($H/2));
+    $quads[0]++ if $x < $midX && $y < $midY;
+    $quads[1]++ if $x < $midX && $y > $midY;
+    $quads[2]++ if $x > $midX && $y < $midY;
+    $quads[3]++ if $x > $midX && $y > $midY;
+  }
+
+  print "Part 1: ", product(@quads), "\n";
 }
 
-my @quads = (0, 0, 0, 0);
-for my $robot (@robots) {
-  my ($x, $y) = @$robot;
+sub part2 {
+  my $i = 0;
+  while (1) {
+    $i++;
+    move($_) for @robots;
 
-  my ($midX, $midY) = (int($W/2), int($H/2));
-  $quads[0]++ if $x < $midX && $y < $midY;
-  $quads[1]++ if $x < $midX && $y > $midY;
-  $quads[2]++ if $x > $midX && $y < $midY;
-  $quads[3]++ if $x > $midX && $y > $midY;
+    if (calc_density() > 1500) { # found by trial and error
+      draw_robots();
+      print "Density: ", calc_density(), "\n";
+      last;
+    }
+  }
+
+  print "Part 2: $i\n";
 }
 
-print Dumper(\@quads);
+sub move {
+  my ($robot) = @_;
+  my ($x, $y, $vx, $vy) = @$robot;
+  $robot->[0] = ($x + $vx) % $W;
+  $robot->[1] = ($y + $vy) % $H;
+}
 
-my $part1 = product(@quads);
+sub calc_density {
+  my @grid = map { [(0) x $W] } 0..$H;
+  $grid[$_->[1]][$_->[0]]++ for @robots;
+
+  my $density = 0;
+  for my $i (0..$H-1) {
+    for my $j (0..$W-1) {
+      next if $grid[$i][$j] == 0;
+
+      my $adjs = 0;
+      for my $di (-1..1) {
+        for my $dj (-1..1) {
+          next if $di == 0 && $dj == 0;
+          my ($ni, $nj) = ($i + $di, $j + $dj);
+          $adjs++ if $ni >= 0 && $ni < $H && $nj >= 0 && $nj < $W && $grid[$ni][$nj] > 0;
+        }
+      }
+
+      $density += $adjs;
+    }
+  }
+
+  $density
+}
 
 sub draw_robots {
   my @grid = map { [(0) x $W] } 0..$H;
-  for my $robot (@robots) {
-    $grid[$robot->[1]][$robot->[0]]++;
-  }
+  $grid[$_->[1]][$_->[0]]++ for @robots;
 
   for my $r (0..$H-1) {
     for my $c (0..$W-1) {
-      print(" "), next if $c eq int($W/2) || $r eq int($H/2);
-      print $grid[$r][$c] ? ($grid[$r][$c] > 9 ? "#" : $grid[$r][$c]) : ".";
+      # print(" "), next if $c eq int($W/2) || $r eq int($H/2);
+      print $grid[$r][$c] ? ($grid[$r][$c] > 9 ? "#" : $grid[$r][$c]) : " ";
     }
     print "\n";
   }
 }
-
-# chomp(my @input = <>);
-print("Part 1: ", $part1, "\n");
-# print("Part 2: ", part_2(@input), "\n");
