@@ -5,13 +5,26 @@ use Data::Dumper;
 
 my @parts = split /\n\n/, join("", <>);
 
-my $grid = [map { chomp; [split //] } split /\n/, $parts[0]];
+my $orig_grid = [map { chomp; [split //] } split /\n/, $parts[0]];
+my $grid = [];
+
+for my $r (0..$#$orig_grid) {
+  for my $c (0..$#{$orig_grid->[$r]}) {
+    if ($orig_grid->[$r][$c] eq "#") {
+      push @{$grid->[$r]}, ("#", "#");
+    } elsif ($orig_grid->[$r][$c] eq ".") {
+      push @{$grid->[$r]}, (".", ".");
+    } elsif ($orig_grid->[$r][$c] eq "@") {
+      push @{$grid->[$r]}, ("@", ".");
+    } elsif ($orig_grid->[$r][$c] eq "O") {
+      push @{$grid->[$r]}, ("[", "]");
+    }
+  }
+}
+
 my ($R, $C) = (scalar(@$grid), scalar(@{$grid->[0]}));
 
 my @moves = $parts[1] =~ /\^|v|<|>/g;
-
-print Dumper($grid);
-print Dumper(\@moves);
 
 my $pos;
 for my $r (0..$R-1) {
@@ -22,14 +35,14 @@ for my $r (0..$R-1) {
   }
 }
 
-print_grid($grid);
+# print_grid($grid);
 for my $dir (@moves) {
-  print "\n";
-  print("Moving '$dir'\n");
+  # print "\n";
+  # print("Moving '$dir'\n");
 
   $pos = [move($pos->[0], $pos->[1], $dir)];
 
-  print_grid($grid);
+  # print_grid($grid);
 }
 
 sub print_grid {
@@ -48,8 +61,6 @@ sub move {
   );
 
   my ($r, $c, $d) = @_;
-  print "Args: $r, $c, $d\n";
-  print Dumper($d, $move_map{$d});
   my ($dr, $dc) = @{$move_map{$d}};
   my ($nr, $nc) = ($r + $dr, $c + $dc);
 
@@ -62,18 +73,31 @@ sub move {
     return ($r, $c);
   }
 
-  my ($or, $oc) = ($nr, $nc);
-  my $steps = 0;
-  while ($grid->[$or][$oc] eq "O") {
-    ($or, $oc) = ($or + $dr, $oc + $dc);
-    $steps++;
-  }
+  my @all_to_move = ([$r, $c]);
 
-  if ($grid->[$or][$oc] eq "#") {
+  my $to_move = collides($nr, $nc, [$dr, $dc]);
+
+  if ($to_move == -1) {
     return ($r, $c);
   }
 
-  swap($or, $oc, $nr, $nc);
+  my @sorted = ();
+  if ($dr != 0) {
+    @sorted = sort { $dr * ($b->[0] <=> $a->[0]) } @$to_move;
+  } else {
+    @sorted = sort { $dc * ($b->[1] <=> $a->[1]) } @$to_move;
+  }
+
+  my %moved;
+  for my $coord (@sorted) {
+    if ($moved{"$coord->[0],$coord->[1]"}) {
+      next;
+    }
+    $moved{"$coord->[0],$coord->[1]"} = 1;
+    my ($tr, $tc) = ($coord->[0] + $dr, $coord->[1] + $dc);
+    swap($coord->[0], $coord->[1], $tr, $tc);
+  }
+
   swap($r, $c, $nr, $nc);
 
   return ($nr, $nc);
@@ -91,7 +115,7 @@ sub calc_dists {
 
   for my $r (0..$R-1) {
     for my $c (0..$C-1) {
-      if ($grid->[$r][$c] eq "O") {
+      if ($grid->[$r][$c] eq "[") {
         $sum += 100 * $r + $c;
       }
     }
@@ -100,7 +124,37 @@ sub calc_dists {
   return $sum;
 }
 
-my ($part1, $part2) = (0, 0);
 
-print("Part 1: ", calc_dists(), "\n");
-print("Part 2: ", $part2, "\n");
+sub collides {
+  my ($r, $c, $d) = @_;
+
+  if ($grid->[$r][$c] eq "#") {
+    return -1;
+  }
+
+  if ($grid->[$r][$c] eq ".") {
+    return [];
+  }
+
+  my @box = $grid->[$r][$c] eq "["
+    ? ([$r, $c], [$r, $c+1])
+    : ([$r, $c-1], [$r, $c]);
+
+  my @found = @box;
+  if ($d->[0] == 0) { # horizontal
+    my $nc = $d->[1] == 1 ? $box[1][1] + 1 : $box[0][1] - 1;
+    my $rec = collides($r, $nc, $d);
+    return -1 if $rec == -1;
+    push @found, @$rec;
+  } else { # vertical
+    for my $i (0..1) {
+      my $rec = collides($box[$i][0] + $d->[0], $box[$i][1] + $d->[1], $d);
+      return -1 if $rec == -1;
+      push @found, @$rec;
+    }
+  }
+
+  return \@found;
+};
+
+print("Part 2: ", calc_dists(), "\n");
