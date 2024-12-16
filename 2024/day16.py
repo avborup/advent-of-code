@@ -28,16 +28,16 @@ class Node:
 
 
 def adj(v):
-    pos, dir, path = v.pos, v.dir, v.path
+    pos, dir = v.pos, v.dir
     reachable = []
 
     if grid[pos + dir] != '#':
-        reachable.append(((pos + dir, dir, path + [pos + dir]), 1))
+        reachable.append(((pos + dir, dir), 1))
 
     for rot in [1j, 1j ** 3]:
         new_dir = dir * rot
         if grid[pos + new_dir] != '#':
-            reachable.append(((pos + new_dir, new_dir, path+[pos + new_dir]), 1001))
+            reachable.append(((pos + new_dir, new_dir), 1001))
 
     return reachable
 
@@ -49,15 +49,13 @@ def dijkstra(S, T):
     dist = defaultdict(lambda: INF)
     pq = []
 
-    iters = 0
-
-    def add(i, dst):
-        n = Node(*i, dist=dst)
+    def add(i, p, dst):
+        n = Node(*i, path=p, dist=dst)
         if dst < dist[n]:
             dist[n] = dst
             push(pq, n)
 
-    add((S, 1, [S]), 0)
+    add((S, 1), [S], 0)
     gucci = set()
     min_dist = INF
 
@@ -65,15 +63,16 @@ def dijkstra(S, T):
         n = pop(pq)
         D, i = n.dist, n
         if i.pos == end:
+            return dist[i]
+            print("D", D)
             if D > min_dist:
-                return len(gucci)
+                return len(gucci)+1
             min_dist = D
-            gucci = gucci.union(i.path)
+            gucci.update(i.path)
         if D != dist[i]:
             continue
         for j, w in adj(i):
-            iters += 1
-            add(j, D + w)
+            add(j, n.path, dst=D + w)
 
     return dist[T]
 
