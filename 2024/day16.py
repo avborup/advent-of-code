@@ -11,7 +11,47 @@ grid = {
 start = next(k for k, v in grid.items() if v == 'S')
 end = next(k for k, v in grid.items() if v == 'E')
 
- 
+
+counter = 0
+def unique():
+    global counter
+    counter += 1
+    return counter
+
+
+def dijkstra():
+    INF = float('inf')
+    dist = defaultdict(lambda: INF)
+    pq = []
+
+    def add(i, dst):
+        global uniq
+        pos, dir, *_ = i
+        if dst <= dist[(pos, dir)]:
+            dist[(pos, dir)] = dst
+            push(pq, (dst, unique(), i))
+
+    add((start, 1, [start]), 0)
+    gucci = set()
+    min_dist = INF
+
+    while pq:
+        D, _, i = pop(pq)
+        pos, dir, path = i
+
+        if pos == end:
+            if D > min_dist:
+                return min_dist, len(gucci)
+            min_dist = D
+            gucci.update(path)
+
+        if D != dist[(pos, dir)]:
+            continue
+
+        for j, w in adj(i):
+            add(j, dst=D + w)
+
+
 def adj(v):
     pos, dir, path = v
     reachable = []
@@ -27,43 +67,6 @@ def adj(v):
     return reachable
 
 
-tie = 0
-
-def dijkstra(S, T):
-    INF = float('inf')
-    dist = defaultdict(lambda: INF)
-    pq = []
-
-    def add(i, dst):
-        global tie
-        pos, dir = (i[0], i[1])
-        if dst <= dist[(pos, dir)]:
-            dist[(pos, dir)] = dst
-            tie += 1
-            push(pq, (dst, tie, i))
-
-
-    add((S, 1, [S]), 0)
-    gucci = set()
-    min_dist = INF
-
-    while pq:
-        D, _, i = pop(pq)
-        pos, dir, path = i
-
-        if pos == end:
-            print("D", D, "min_dist", min_dist)
-            if D > min_dist:
-                return len(gucci)
-            min_dist = D
-            gucci.update(path)
-
-        if D != dist[(pos, dir)]:
-            continue
-
-        for j, w in adj(i):
-            add(j, dst=D + w)
-
-    return dist[T]
-
-print("Part 1:", dijkstra(start, end))
+part1, part2 = dijkstra()
+print("Part 1:", part1)
+print("Part 2:", part2)
