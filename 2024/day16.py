@@ -11,68 +11,58 @@ grid = {
 start = next(k for k, v in grid.items() if v == 'S')
 end = next(k for k, v in grid.items() if v == 'E')
 
-
-class Node:
-    def __init__(self, pos, dir, path, dist):
-        self.pos = pos
-        self.dir = dir
-        self.path = path
-        self.dist = dist
-
-    def __lt__(self, other):
-        return self.dist < other.dist
-
-
-    def __hash__(self):
-        return hash((self.pos, self.dir))
-
-
+ 
 def adj(v):
-    pos, dir = v.pos, v.dir
+    pos, dir, path = v
     reachable = []
 
     if grid[pos + dir] != '#':
-        reachable.append(((pos + dir, dir), 1))
+        reachable.append(((pos + dir, dir, path + [pos + dir]), 1))
 
     for rot in [1j, 1j ** 3]:
         new_dir = dir * rot
         if grid[pos + new_dir] != '#':
-            reachable.append(((pos + new_dir, new_dir), 1001))
+            reachable.append(((pos + new_dir, new_dir, path + [pos + new_dir]), 1001))
 
     return reachable
 
 
-
+tie = 0
 
 def dijkstra(S, T):
     INF = float('inf')
     dist = defaultdict(lambda: INF)
     pq = []
 
-    def add(i, p, dst):
-        n = Node(*i, path=p, dist=dst)
-        if dst < dist[n]:
-            dist[n] = dst
-            push(pq, n)
+    def add(i, dst):
+        global tie
+        pos, dir = (i[0], i[1])
+        if dst <= dist[(pos, dir)]:
+            dist[(pos, dir)] = dst
+            tie += 1
+            push(pq, (dst, tie, i))
 
-    add((S, 1), [S], 0)
+
+    add((S, 1, [S]), 0)
     gucci = set()
     min_dist = INF
 
     while pq:
-        n = pop(pq)
-        D, i = n.dist, n
-        if i.pos == end:
-            return dist[i]
-            print("D", D)
+        D, _, i = pop(pq)
+        pos, dir, path = i
+
+        if pos == end:
+            print("D", D, "min_dist", min_dist)
             if D > min_dist:
-                return len(gucci)+1
+                return len(gucci)
             min_dist = D
-            gucci.update(i.path)
-        if D != dist[i]:
+            gucci.update(path)
+
+        if D != dist[(pos, dir)]:
             continue
+
         for j, w in adj(i):
-            add(j, n.path, dst=D + w)
+            add(j, dst=D + w)
 
     return dist[T]
 
