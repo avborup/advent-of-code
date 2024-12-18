@@ -3,30 +3,23 @@ from collections import defaultdict, deque
 
 
 rows = [[int(x) for x in l.split(",")] for l in stdin]
-kb = rows[:1024]
+W, H = max(x[0] for x in rows), max(x[1] for x in rows)
 
-W, H = max(x[0] for x in kb), max(x[1] for x in kb)
+# # print grid
+# for y in range(int(H) + 1):
+#     for x in range(int(W) + 1):
+#         if complex(x, y) == start:
+#             print("S", end="")
+#         elif complex(x, y) == end:
+#             print("E", end="")
+#         else:
+#             print("#" if complex(x, y) in grid else ".", end="")
+#     print()
 
-grid = { complex(x, y): 1 for x,y in kb }
+def bfs(num_bytes):
+    grid = { complex(x, y): 1 for x,y in rows[:num_bytes] }
+    start, end = complex(0, 0), complex(W, H)
 
-print(len(grid))
-print(W, H)
-print(grid)
-
-start, end = complex(0, 0), complex(W, H)
-
-# print grid
-for y in range(int(H) + 1):
-    for x in range(int(W) + 1):
-        if complex(x, y) == start:
-            print("S", end="")
-        elif complex(x, y) == end:
-            print("E", end="")
-        else:
-            print("#" if complex(x, y) in grid else ".", end="")
-    print()
-
-def bfs():
     queue = deque([(start, 0)])
     visited = set()
 
@@ -47,9 +40,21 @@ def bfs():
             if new_pos not in grid and new_pos not in visited:
                 queue.append((new_pos, dist + 1))
 
+    return None
 
-part1 = bfs()
-part2 = 0
+
+initial = 1024
+part1 = bfs(initial)
+
+lo, hi = initial, len(rows) + 1
+while lo < hi:
+    mid = (lo + hi) >> 1
+    if bfs(mid) is not None:
+        lo = mid + 1
+    else:
+        hi = mid
+
+part2 = f"{rows[lo-1][0]},{rows[lo-1][1]}"
 
 print("Part 1:", part1)
 print("Part 1:", part2)
