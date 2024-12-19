@@ -19,7 +19,7 @@ def solve(design):
 part1, part2 = 0, 0
 for design in designs:
     num_options = solve(design)
-    part1 += 1 if num_options > 0 else 0
+    part1 += num_options > 0
     part2 += num_options
 
 print("Part 1:", part1)

@@ -37,4 +37,4 @@ while lo < hi:
 
 part2 = f"{rows[lo-1][0]},{rows[lo-1][1]}"
 print("Part 1:", part1)
-print("Part 1:", part2)
+print("Part 2:", part2)

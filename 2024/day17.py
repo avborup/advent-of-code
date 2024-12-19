@@ -85,4 +85,4 @@ part1 = run((0, orig_A, orig_B, orig_C, []), program)
 part2 = solve(program, len(program) - 1, 0)
 
 print("Part 1:", ','.join(str(x) for x in part1[4]))
-print("Part 1:", part2)
+print("Part 2:", part2)
