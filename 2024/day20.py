@@ -1,6 +1,5 @@
 from sys import stdin
 from collections import deque, defaultdict
-from typing import Counter
 
 grid = defaultdict(lambda: '#', {
     complex(c, r): v
@@ -9,7 +8,6 @@ grid = defaultdict(lambda: '#', {
 })
 start = next(k for k, v in grid.items() if v == 'S')
 end = next(k for k, v in grid.items() if v == 'E')
-
 
 def bfs():
     q = deque([(start, 0)])
@@ -33,7 +31,6 @@ def bfs():
 
 best_dist, non_walls = bfs()
 part1, part2 = 0, 0
-
 for i in range(len(non_walls)):
     for j in range(i + 1, len(non_walls)):
         a, b = non_walls[i], non_walls[j]
@@ -41,9 +38,8 @@ for i in range(len(non_walls)):
         skip_dist = abs(a.real - b.real) + abs(a.imag - b.imag)
         time_saved = (j - i) - skip_dist
 
-        if skip_dist <= 20:
-            if time_saved >= 100:
-                part1 += 1
+        part1 += skip_dist <= 2 and time_saved >= 100
+        part2 += skip_dist <= 20 and time_saved >= 100
 
 print("Part 1:", part1)
 print("Part 2:", part2)
