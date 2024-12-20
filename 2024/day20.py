@@ -1,39 +1,28 @@
 from sys import stdin
-from collections import deque, defaultdict
 
-grid = defaultdict(lambda: '#', {
+grid = {
     complex(c, r): v
     for r, ln in enumerate(l.strip() for l in stdin)
     for c, v in enumerate(ln)
-})
+}
 start = next(k for k, v in grid.items() if v == 'S')
 end = next(k for k, v in grid.items() if v == 'E')
 
-def bfs():
-    q = deque([(start, 0)])
-    non_walls, visited = [], set()
-    while q:
-        pos, dist = q.popleft()
-
-        if pos in visited:
-            continue
-
+def dfs():
+    path, visited = [start], set()
+    for pos in path:
         visited.add(pos)
-        non_walls.append(pos)
-
-        if pos == end:
-            return dist, non_walls
-
         for d in [1, -1, 1j, -1j]:
             npos = pos + d
-            if npos not in visited and grid[npos] != '#':
-                q.append((npos, dist + 1))
+            if grid[npos] != '#' and npos not in visited:
+                path.append(npos)
+    return path
 
-best_dist, non_walls = bfs()
+path = dfs()
 part1, part2 = 0, 0
-for i in range(len(non_walls)):
-    for j in range(i + 1, len(non_walls)):
-        a, b = non_walls[i], non_walls[j]
+for i in range(len(path)):
+    for j in range(i + 1, len(path)):
+        a, b = path[i], path[j]
 
         skip_dist = abs(a.real - b.real) + abs(a.imag - b.imag)
         time_saved = (j - i) - skip_dist
