@@ -3,92 +3,29 @@ from collections import deque
 import itertools
 from functools import cache
 
-"""
-+---+---+---+
-| 7 | 8 | 9 |
-+---+---+---+
-| 4 | 5 | 6 |
-+---+---+---+
-| 1 | 2 | 3 |
-+---+---+---+
-    | 0 | A |
-    +---+---+
-
-A to 3 via ^A
-3 to 7 via ^^<<A
-7 to 9 via >>A
-9 to A via vvvA
-
-    +---+---+
-    | ^ | A |
-+---+---+---+
-| < | v | > |
-+---+---+---+
-
-A to ^ via <A
-^ to A via >A
-A to ^ via <A
-^ to ^ via A
-^ to < via v<A
-< to < via A
-< to A via >>^A
-A to > via vA
-> to > via A
-> to A via ^A
-A to v via v<A
-v to v via A
-v to v via A
-v to A via >^A
-
-A to < via v<<A
-< to A via >>^A
-A to > via vA
-> to A via ^A
-A to < via v<<A
-< to A via >>^A
-A to A via A
-A to v via v<A
-v to < via <A
-< to A via >>^A
-A to A via A
-A to > via vA
-> to > via A
-> to ^ via ^<A
-^ to A via >A
-A to v via v<A
-v to A via >^A
-A to A via A
-A to ^ via <A
-^ to A via >A
-A to v via v<A
-v to < via <A
-< to A via >>^A
-A to A via A
-A to A via A
-A to > via vA
-> to ^ via ^<A
-^ to A via >A
-
-^A^^<<A>>AvvvA
-<A>A<AAv<AA>>^AvAA^Av<AAA>^A
-v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A
-
-"""
-
-NUMERIC = [
+NUMERIC_GRID = [
     ['7', '8', '9'],
     ['4', '5', '6'],
     ['1', '2', '3'],
     [None, '0', 'A'],
 ]
+NUMERIC = {
+    key: complex(r, c)
+    for r, row in enumerate(NUMERIC_GRID)
+    for c, key in enumerate(row) if key is not None
+}
 
-DIR = [
+DIR_GRID = [
     [None, '^', 'A'],
     ['<', 'v', '>'],
 ]
+DIR = {
+    key: complex(r, c)
+    for r, row in enumerate(DIR_GRID)
+    for c, key in enumerate(row) if key is not None
+}
 
-INIT_NUM = complex(3, 2)
-INIT_DIR = complex(0, 2)
+INIT_NUM, INIT_DIR = NUMERIC['A'], DIR['A']
 
 dirs_to_syms = {
     complex(1, 0): 'v',
@@ -96,7 +33,6 @@ dirs_to_syms = {
     complex(0, 1): '>',
     complex(0, -1): '<',
 }
-
 
 def find_seq(pad, start_pos, end_symbol):
     queue = deque([(start_pos, [])])
@@ -116,52 +52,82 @@ def find_seq(pad, start_pos, end_symbol):
 
 
 @cache
-def cost(path):
-    return len(find_presses_for_code(DIR, INIT_DIR, path, optimise=False))
+def find_presses_for_code(code, level=0, cur_pos=None):
+    if not code:
+        return 0, ""
 
-@cache
-def optimal_order(path):
-    best, best_val = float('inf'), None
-    for perm in set(itertools.permutations(path)):
-        perm = ''.join(perm)
-        val = cost(perm + 'A')
+    pad = NUMERIC if level == 0 else DIR
+    cur_pos = cur_pos
+    if cur_pos is None:
+        cur_pos = pad['A']
 
-        if val < best:
-            best = val
-            best_val = perm
+    target_key = code[0]
+    target_pos = pad[target_key]
 
-    return best_val
+    diff = target_pos - cur_pos
+    dr, dc = int(diff.real), int(diff.imag)
+    hor_sym = '>' if dc > 0 else '<'
+    ver_sym = 'v' if dr > 0 else '^'
 
+    options = set()
+    if cur_pos + complex(0, dc) in pad.values():
+        options.add(hor_sym * abs(dc) + ver_sym * abs(dr))
+    if cur_pos + complex(dr, 0) in pad.values():
+        options.add(ver_sym * abs(dr) + hor_sym * abs(dc))
 
-def find_presses_for_code(pad, init_pos, code, optimise=True):
-    presses, cur_pos = [], init_pos
-    for c in code:
-        # print(pad[int(cur_pos.real)][int(cur_pos.imag)], "to", c, "via", end=' ')
-        cur_pos, path = find_seq(pad, cur_pos, c)
-        if optimise:
-            print(''.join(path), end=' into ')
-            path = list(optimal_order(''.join(path)))
-            print(''.join(path))
-        # print(''.join(path))
-        presses.extend(path + ['A'])
-    # print()
-    return presses
+    # print(level * '  ', f'{level})', code, f"{options}", "from", cur_pos)
+
+    if level < 25:
+        def option_cost(option):
+            option = option + "A"
+            return find_presses_for_code(option, level + 1)
+
+        cost, option = min(option_cost(option) for option in options)
+    else:
+        opt = next(iter(options)) + "A"
+        cost, option = len(opt), opt
+
+    subcost, suboption = find_presses_for_code(code[1:], level, target_pos)
+
+    total_cost = cost + subcost
+    total_option = option # + suboption
+
+    # print(level * '  ', ".", code, "=", f"({cost} + {subcost})", "presses for", total_option)
+
+    return total_cost, total_option
+
+    print(cur_pos, target_pos, options)
+
+    # for c in code:
+    #     # print(pad[int(cur_pos.real)][int(cur_pos.imag)], "to", c, "via", end=' ')
+    #     cur_pos, path = find_seq(pad, cur_pos, c)
+    #     if optimise:
+    #         print(''.join(path), end=' into ')
+    #         path = list(optimal_order(''.join(path)))
+    #         print(''.join(path))
+    #     # print(''.join(path))
+    #     presses.extend(path + ['A'])
+    # # print()
+    #
+    # return presses
 
 codes = [line.strip() for line in stdin]
 
 part1, part2 = 0, 0
 for code in codes:
-    rob1 = find_presses_for_code(NUMERIC, INIT_NUM, code)
-    rob2 = find_presses_for_code(DIR, INIT_DIR, rob1)
-    rob3 = find_presses_for_code(DIR, INIT_DIR, rob2)
+    # rob1 = find_presses_for_code(NUMERIC, INIT_NUM, code)
+    # rob2 = find_presses_for_code(DIR, INIT_DIR, rob1)
+    # rob3 = find_presses_for_code(DIR, INIT_DIR, rob2)
 
-    print(''.join(rob1))
-    print(''.join(rob2))
-    print(''.join(rob3))
+    # print(''.join(rob1))
+    # print(''.join(rob2))
+    # print(''.join(rob3))
+    #
+    # print(len(rob3), code[:-1])
 
-    print(len(rob3), code[:-1])
-
-    part1 += len(rob3) * int(code[:-1])
+    cost, presses = find_presses_for_code(code)
+    print(code, cost, presses)
+    part1 += cost * int(code[:-1])
 
 print("Part 1:", part1)
 print("Part 2:", part2)
