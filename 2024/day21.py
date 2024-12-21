@@ -1,5 +1,7 @@
 from sys import stdin
 from collections import deque
+import itertools
+from functools import cache
 
 """
 +---+---+---+
@@ -106,21 +108,43 @@ def find_seq(pad, start_pos, end_symbol):
         if pos in visited:
             continue
         visited.append(pos)
-        for d in [1, 1j, -1, -1j]:
+        for d in [-1, 1j, 1, -1j]:
             new_pos = pos + d
 
             if 0 <= new_pos.real < len(pad) and 0 <= new_pos.imag < len(pad[0]) and pad[int(new_pos.real)][int(new_pos.imag)] is not None:
                 queue.append((new_pos, path + [dirs_to_syms[d]]))
 
 
-def find_presses_for_code(pad, init_pos, code):
+@cache
+def cost(path):
+    return len(find_presses_for_code(DIR, INIT_DIR, path, optimise=False))
+
+@cache
+def optimal_order(path):
+    best, best_val = float('inf'), None
+    for perm in set(itertools.permutations(path)):
+        perm = ''.join(perm)
+        val = cost(perm + 'A')
+
+        if val < best:
+            best = val
+            best_val = perm
+
+    return best_val
+
+
+def find_presses_for_code(pad, init_pos, code, optimise=True):
     presses, cur_pos = [], init_pos
     for c in code:
-        print(pad[int(cur_pos.real)][int(cur_pos.imag)], "to", c, "via", end=' ')
+        # print(pad[int(cur_pos.real)][int(cur_pos.imag)], "to", c, "via", end=' ')
         cur_pos, path = find_seq(pad, cur_pos, c)
-        print(''.join(path + ['A']))
+        if optimise:
+            print(''.join(path), end=' into ')
+            path = list(optimal_order(''.join(path)))
+            print(''.join(path))
+        # print(''.join(path))
         presses.extend(path + ['A'])
-    print()
+    # print()
     return presses
 
 codes = [line.strip() for line in stdin]
