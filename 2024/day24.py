@@ -3,64 +3,40 @@ from collections import deque, defaultdict
 import itertools
 
 inp = ''.join(line for line in stdin)
-inits, idk = inp.split("\n\n")
+inits, gates_str = inp.split("\n\n")
 
-wires = {}
-for line in inits.splitlines():
-    name, val = line.split(": ")
-    wires[name] = int(val)
+def solve_with_swaps(swaps):
+    wires = {}
+    for line in inits.splitlines():
+        name, val = line.split(": ")
+        wires[name] = int(val)
 
-swappable = [
-    ("z15", "htp"),
-    ("z20", "hhh"),
-    ("z05", "dkr"),
-    ("ggk", "rhv")
-]
+    graph = defaultdict(list)
+    for line in gates_str.splitlines():
+        a, op, b, _, c = line.split()
 
-graph = defaultdict(list)
-for line in idk.splitlines():
-    a, op, b, _, c = line.split()
+        for s1, s2 in swaps:
+            if c == s1: c = s2
+            elif c == s2: c = s1
 
-    for s1, s2 in swappable:
-        if c == s1:
-            c = s2
-        elif c == s2:
-            c = s1
+        # Debug printing in DOT format
+        def print_dot():
+            gateid = f"{a}{b}{op}{c}"
+            print(f'{gateid} [label="{op}", shape=invtriangle]')
+            if a in wires:
+                print(f'{a} [label="{a} ({wires[a]})"]')
+            if b in wires:
+                print(f'{b} [label="{b} ({wires[b]})"]')
+            print(f'{a} -> {gateid}')
+            print(f'{b} -> {gateid}')
+            print(f'{gateid} -> {c}')
 
-    gateid = f"{a}{b}{op}{c}"
-    print(f'{gateid} [label="{op}", shape=invtriangle]')
-    if a in wires:
-        print(f'{a} [label="{a} ({wires[a]})"]')
-    if b in wires:
-        print(f'{b} [label="{b} ({wires[b]})"]')
-    print(f'{a} -> {gateid}')
-    print(f'{b} -> {gateid}')
-    print(f'{gateid} -> {c}')
+        # print_dot()
 
-    gate = (a, op, b, c)
-    graph[a].append(gate)
-    graph[b].append(gate)
+        gate = (a, op, b, c)
+        graph[a].append(gate)
+        graph[b].append(gate)
 
-all_out_wires = set()
-for adj in graph.values():
-    for gate in adj:
-        all_out_wires.add(gate[-1])
-
-
-def get_wires_with_letters(letter):
-    sorted_wires = sorted([(k, v) for k, v in wires.items() if k.startswith(letter)], key=lambda x: x[0], reverse=True)
-    return int(''.join(str(v) for k, v in sorted_wires), base=2)
-
-print(all_out_wires, len(all_out_wires))
-
-expected_out = get_wires_with_letters("x") + get_wires_with_letters("y")
-
-print(f" {get_wires_with_letters('x'):b} +")
-print(f" {get_wires_with_letters('y'):b} =")
-print(f"{expected_out:b}")
-# print(expected_out)
-
-def bfs():
     queue = deque(wires.keys())
     visited = defaultdict(bool)
     while queue:
@@ -84,15 +60,38 @@ def bfs():
 
                 queue.append(c)
 
-bfs()
-print(f"{get_wires_with_letters('z'):b} <")
-
-print(expected_out == get_wires_with_letters("z"))
-
-print("Part 1:", get_wires_with_letters("z"))
-print("Part 2:", 0)
+    return wires
 
 
-flat = list(itertools.chain(*swappable))
+def get_wires_with_letters(wires, letter):
+    sorted_wires = sorted([(k, v) for k, v in wires.items() if k.startswith(letter)], key=lambda x: x[0], reverse=True)
+    return int(''.join(str(v) for k, v in sorted_wires), base=2)
 
-print(",".join(sorted(flat)))
+
+wires1 = solve_with_swaps([])
+part1 = get_wires_with_letters(wires1, "z")
+
+# Insight: the input is a series of full-adder circuits. Just look up how it looks:
+#    https://www.build-electronic-circuits.com/full-adder/
+#
+# Draw the graph in DOT format and let the layout work its magic. Then, manually go
+# from top to bottom and manually identify all broken full-adders.
+swaps = [
+    ("z15", "htp"),
+    ("z20", "hhh"),
+    ("z05", "dkr"),
+    ("ggk", "rhv")
+];
+wires2 = solve_with_swaps(swaps)
+part2 = get_wires_with_letters(wires2, "z")
+
+exp_x, exp_y = get_wires_with_letters(wires2, "x"), get_wires_with_letters(wires2, "y")
+print(f"  x: {exp_x:b} +")
+print(f"  y: {exp_y:b} =")
+print(f"exp: {exp_x + exp_y:b}")
+print(f"act: {part2:b}")
+print(f"eq?: {exp_x + exp_y == part2}")
+print()
+
+print("Part 1:", part1)
+print("Part 2:", ",".join(sorted(itertools.chain(*swaps))))
