@@ -1,23 +1,13 @@
 from sys import stdin
 
-inp = ''.join(line for line in stdin)
-
 keys, locks = [], []
-for block in inp.split("\n\n"):
-    lines = block.splitlines()
-
-    tranposed = list(zip(*lines))
-
+for block in ''.join(stdin.readlines()).split("\n\n"):
+    tranposed = list(zip(*block.splitlines()))
     is_key = tranposed[0][0] == "#"
     heights = tuple(row.count("#") - 1 for row in tranposed)
-
-    if is_key:
-        keys.append(heights)
-    else:
-        locks.append(heights)
+    (keys if is_key else locks).append(heights)
 
 fits = set()
-
 for key in keys:
     for lock in locks:
         if all(k + l <= 5 for k, l in zip(key, lock)):
