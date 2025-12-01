@@ -1,25 +1,25 @@
 prev, pos = 50, 50;
-part1, part2 = 0, 0;
+parts = 0, 0;
 
-for dir, val in input().find_all(r/(R|L)(\d+)/n) {
+for dir, amount in input().find_all(r/(R|L)(\d+)/n) {
   match dir {
-    "R" => pos += val,
-    "L" => pos -= val,
+    "R" => pos += amount,
+    "L" => pos -= amount,
   };
 
   pos = ((pos % 100) + 100) % 100;
-  part2 += val // 100;
+  parts += (0, amount // 100);
 
-  if pos == 0 {
-    part1 += 1;
-    part2 += 1;
-  } else if prev != 0 {
-    part2 += 1 if dir == "R" and prev > pos;
-    part2 += 1 if dir == "L" and prev < pos;
+  match pos {
+    0 => parts += (1, 1),
+    _ => if prev != 0 {
+      parts += (0, 1) if dir == "R" and prev > pos;
+      parts += (0, 1) if dir == "L" and prev < pos;
+    },
   };
 
   prev = pos;
 };
 
-print("Part 1:", part1);
-print("Part 2:", part2);
+print("Part 1:", parts[0]);
+print("Part 2:", parts[1]);
