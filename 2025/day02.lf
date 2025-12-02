@@ -1,0 +1,16 @@
+part1, part2 = 0, 0;
+
+for start, end in input().find_all(r/(\d+)-(\d+)/n) {
+  for n in start..=end {
+    s = str(n);
+
+    part1 += n if s[..s.len()/2] == s[s.len()/2..];
+
+    for i in 1..=s.len()/2 {
+      (part2 += n; break) if s.count(s[..i]) * i == s.len();
+    };
+  };
+};
+
+print("Part 1:", part1);
+print("Part 2:", part2);
