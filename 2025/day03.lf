@@ -6,7 +6,7 @@ fn solve(digits) {
   for bank in banks {
     left, right = 0, bank.len() - 1;
 
-    for i in 0..digits {
+    for i in ..digits {
       max, space = 0, digits - i - 1;
 
       for j in left..=(right - space) {
