@@ -1,0 +1,20 @@
+grid = [list(line) for line in input().lines()];
+seps = [i for i, v in grid[-1].enumerate() if v != " "] + [grid[-1].len()+1];
+
+subgrids = [];
+for i in 0..seps.len() - 1 {
+  from, to = seps[i], seps[i + 1] - 1;
+  subgrid, op = [row[from..to] for row in grid[..-1]], grid[-1][from];
+  subgrids.append((subgrid, op));
+};
+
+fn eval(subgrid, op) {
+  nums = [int(row.join()) for row in subgrid];
+  match op { "+" => sum(nums), "*" => mul(nums) }
+};
+
+part1 = sum([eval(subgrid, op) for subgrid, op in subgrids]);
+part2 = sum([eval(subgrid.transpose(), op) for subgrid, op in subgrids]);
+
+print("Part 1:", part1);
+print("Part 2:", part2);
