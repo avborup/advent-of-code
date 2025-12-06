@@ -1,0 +1,25 @@
+papers = set([
+  [(r, c) for c, val in line.enumerate() if val == "@"]
+  for r, line in input().lines().enumerate()
+].flat());
+
+part1, part2 = 0, 0;
+new_papers, changed, first = set(), true, true;
+
+while changed {
+  new_papers, changed = set(), false;
+
+  for pos in papers {
+    diffs = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
+    neighbors = [d for d in diffs if pos + d in papers];
+    new_papers.add(pos) unless neighbors.len() < 4;
+  };
+
+  part1 += (papers - new_papers).len() if first;
+  part2 += (papers - new_papers).len();
+
+  changed, papers, first = new_papers != papers, new_papers, false;
+};
+
+print("Part 1:", part1);
+print("Part 2:", part2);
