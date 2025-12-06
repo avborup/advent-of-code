@@ -1,0 +1,27 @@
+range_str, id_str = input().split("\n\n");
+ranges = [start..=end for start, end in range_str.find_all(r/(\d+)-(\d+)/n)];
+ids = id_str.nums();
+
+part1 = [id for id in ids if any([id in r for r in ranges])].len();
+
+fn is_overlapping(a, b) not (a.last() < b.first() or b.last() < a.first());
+fn find_overlap(ranges) {
+  for a in ranges {
+    for b in ranges {
+      return (a, b) if a != b and is_overlapping(a, b);
+    };
+  };
+};
+
+non_overlapping = set(ranges);
+while overlap = find_overlap(non_overlapping) {
+    a, b = overlap;
+    non_overlapping.remove(a).remove(b);
+    merged = min(a.first(), b.first())..=max(a.last(), b.last());
+    non_overlapping.add(merged);
+};
+
+part2 = sum([r.len() for r in non_overlapping]);
+
+print("Part 1:", part1);
+print("Part 2:", part2);
