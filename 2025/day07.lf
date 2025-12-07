@@ -1,0 +1,29 @@
+grid = [list(line) for line in input().lines()];
+R, C = grid.len(), grid.first().len();
+
+part1, graph = 0, defaultmap(set());
+for r in 1..R {
+  for c in 0..C {
+    continue if grid[r-1][c] not in "|S";
+
+    if grid[r][c] in ".|" {
+      grid[r][c] = "|";
+      graph[(r-1, c)].add((r, c));
+    } else if grid[r][c] == "^" {
+      grid[r][c-1] = "|";
+      grid[r][c+1] = "|";
+      graph[(r-1, c)].add((r, c-1)).add((r, c+1));
+      part1 += 1;
+    };
+  };
+};
+
+memoized fn dfs(v) {
+    return 1 if v >= (R-1, 0);
+    sum([dfs(a) for a in graph[v]])
+};
+
+part2 = dfs((0, C // 2));
+
+print("Part 1:", part1);
+print("Part 2:", part2);
