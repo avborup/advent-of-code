@@ -1,20 +1,21 @@
-grid = [list(line) for line in input().lines()];
+grid = input().lines();
 R, C = grid.len(), grid.first().len();
+S = (0, C // 2);
 
-part1, graph = 0, defaultmap(set());
+part1, beams, graph = 0, set([S]), defaultmap(set());
 for r in 1..R {
   for c in 0..C {
-    continue if grid[r-1][c] not in "|S";
+    continue if (r-1, c) not in beams;
 
-    if grid[r][c] in ".|" {
-      grid[r][c] = "|";
-      graph[(r-1, c)].add((r, c));
-    } else if grid[r][c] == "^" {
-      grid[r][c-1] = "|";
-      grid[r][c+1] = "|";
-      graph[(r-1, c)].add((r, c-1)).add((r, c+1));
-      part1 += 1;
+    new = match grid[r][c] {
+      "." => [(r, c)],
+      "^" => [(r, c-1), (r, c+1)],
+      _ => [],
     };
+
+    part1 += 1 if new.len() == 2;
+
+    [(beams.add(n), graph[(r-1, c)].add(n)) for n in new];
   };
 };
 
@@ -23,7 +24,5 @@ memoized fn dfs(v) {
     sum([dfs(a) for a in graph[v]])
 };
 
-part2 = dfs((0, C // 2));
-
 print("Part 1:", part1);
-print("Part 2:", part2);
+print("Part 2:", dfs(S));
