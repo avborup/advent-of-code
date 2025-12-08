@@ -21,6 +21,9 @@ class UnionFind:
             a = root
         return root
 
+    def is_connected(self, a, b):
+        return self.find(a) == self.find(b)
+
     def groups(self):
         return Counter([self.find(k) for k in self.map])
 
@@ -39,11 +42,19 @@ for i in range(len(points)):
         edges.append((dist(a, b), a, b))
 edges.sort()
 
+last_connected = None, None
+part1 = None
 for i, (d, a, b) in enumerate(edges):
-    if i >= 1000 or (i >= 10 and len(points) <= 20):
-        break
+    if part1 is None and (i >= 1000 or (i >= 10 and len(points) <= 20)):
+        part1 = math.prod(sorted(uf.groups().values(), reverse=True)[:3])
+
+    if not uf.is_connected(a, b):
+        last_connected = a, b
+
     uf.union(a, b)
 
-part1 = math.prod(sorted(uf.groups().values(), reverse=True)[:3])
+
+part2 = last_connected[0][0] * last_connected[1][0]
 
 print("Part 1:", part1)
+print("Part 2:", part2)
