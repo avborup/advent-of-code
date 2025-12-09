@@ -1,0 +1,26 @@
+uf = {};
+fn union(a, b) uf[a] = uf[find(b)] = find(a);
+fn find(a) if (uf[a] or a) == a { a } else { find(uf[a]) };
+fn is_connected(a, b) find(a) == find(b);
+fn roots() counter([find(k) for k in uf.values()]);
+
+fn dist(a, b) sqrt(sum([(a[n] - b[n]) ** 2 for n in ..3]));
+
+points = [line.nums() for line in input().lines()];
+edges = [
+  [(dist((a = points[i]), (b = points[j])), a, b)
+  for j in i+1..points.len()]
+  for i in ..points.len()
+].flat().sort();
+
+for i, (d, a, b) in edges.enumerate() {
+  part1 = mul((roots().values().sort())[-3..]) if (i == 1000 or i == 10);
+  last_connected = (a, b) if not is_connected(a, b);
+  union(a, b);
+};
+
+(ax, _), (bx, _) = last_connected;
+part2 = ax * bx;
+
+print("Part 1:", part1);
+print("Part 2:", part2);
