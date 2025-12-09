@@ -20,15 +20,13 @@ fn is_inside_polygon(point) {
     min_x, max_x = min(_ax, _bx), max(_ax, _bx);
     min_y, max_y = min(_ay, _by), max(_ay, _by);
 
-    if min_x <= x and x <= max_x and min_y <= y and y <= max_y {
+    if x in (min_x..=max_x) and y in (min_y..=max_y) {
       if (x == _ax and x == _bx) or (y == _ay and y == _by) {
         return true;
       };
     };
 
-    if _ax == _bx {
-      crossings += 1 if _ax > x and min_y < y and y <= max_y;
-    };
+    crossings += 1 if _ax == _bx and _ax > x and y in (min_y+1..=max_y);
   };
  
   return crossings % 2 == 1;
@@ -44,7 +42,7 @@ fn segment_crosses_edge(side) {
         edge_min_y, edge_max_y = min(_ay, _by), max(_ay, _by);
         # Crosses if edge is strictly between segment endpoints
         # and segment y is strictly within edge range
-        if seg_min_x < _ax and _ax < seg_max_x and edge_min_y < y1 and y1 < edge_max_y {
+        if _ax in (seg_min_x+1..seg_max_x) and y1 in (edge_min_y+1..edge_max_y) {
           return true;
         };
       };
@@ -52,7 +50,7 @@ fn segment_crosses_edge(side) {
       if _ay == _by {  # Horizontal edge
         seg_min_y, seg_max_y = min(y1, y2), max(y1, y2);
         edge_min_x, edge_max_x = min(_ax, _bx), max(_ax, _bx);
-        if seg_min_y < _ay and _ay < seg_max_y and edge_min_x < x1 and x1 < edge_max_x {
+        if _ay in (seg_min_y+1..seg_max_y) and x1 in (edge_min_x+1..edge_max_x) {
           return true;
         };
       };
@@ -62,21 +60,26 @@ fn segment_crosses_edge(side) {
   return false;
 };
 
-for rect in rects {
+fn rect_is_inside(rect) {
   (ax, ay), (bx, by) = rect;
   corners = [(ax, ay), (ax, by), (bx, ay), (bx, by)];
 
-  if any([not is_inside_polygon(corner) for corner in corners]) {
-    continue;
+  for corner in corners {
+    return false if not is_inside_polygon(corner);
   };
 
   sides = [((ax, ay), (ax, by)), ((ax, by), (bx, by)),
            ((bx, by), (bx, ay)), ((bx, ay), (ax, ay))];
 
-  if any([segment_crosses_edge(side) for side in sides]) {
-    continue;
+  for side in sides {
+    return false if segment_crosses_edge(side);
   };
 
-  print("Part 2:", area(((ax, ay), (bx, by))));
-  break;
+  true
 };
+
+for rect in rects {
+  break if rect_is_inside(rect);
+};
+
+print("Part 2:", area(rect));
