@@ -1,0 +1,82 @@
+tiles = [tuple(line.nums()) for line in input().lines()];
+
+fn area(rect) {
+  (ax, ay), (bx, by) = rect;
+  (1 + abs(ax - bx)) * (1 + abs(ay - by))
+};
+
+max_area = 0;
+rects = [[(tiles[i], tiles[j]) for j in i+1..tiles.len()] for i in ..tiles.len()].flat();
+rects.sort(area).reverse();
+
+print("Part 1:", area(rects.first()));
+
+edges = [(tiles[i], tiles[i+1]) for i in -1..tiles.len()-1];
+
+fn is_inside_polygon(point) {
+  (x, y), crossings = point, 0;
+
+  for (_ax, _ay), (_bx, _by) in edges {
+    min_x, max_x = min(_ax, _bx), max(_ax, _bx);
+    min_y, max_y = min(_ay, _by), max(_ay, _by);
+
+    if min_x <= x and x <= max_x and min_y <= y and y <= max_y {
+      if (x == _ax and x == _bx) or (y == _ay and y == _by) {
+        return true;
+      };
+    };
+
+    if _ax == _bx {
+      crossings += 1 if _ax > x and min_y < y and y <= max_y;
+    };
+  };
+ 
+  return crossings % 2 == 1;
+};
+
+fn segment_crosses_edge(side) {
+  (x1, y1), (x2, y2) = side;
+
+  for (_ax, _ay), (_bx, _by) in edges {
+    if y1 == y2 {  # Horizontal segment
+      if _ax == _bx {  # Vertical edge
+        seg_min_x, seg_max_x = min(x1, x2), max(x1, x2);
+        edge_min_y, edge_max_y = min(_ay, _by), max(_ay, _by);
+        # Crosses if edge is strictly between segment endpoints
+        # and segment y is strictly within edge range
+        if seg_min_x < _ax and _ax < seg_max_x and edge_min_y < y1 and y1 < edge_max_y {
+          return true;
+        };
+      };
+    } else if x1 == x2 {
+      if _ay == _by {  # Horizontal edge
+        seg_min_y, seg_max_y = min(y1, y2), max(y1, y2);
+        edge_min_x, edge_max_x = min(_ax, _bx), max(_ax, _bx);
+        if seg_min_y < _ay and _ay < seg_max_y and edge_min_x < x1 and x1 < edge_max_x {
+          return true;
+        };
+      };
+    };
+  };
+
+  return false;
+};
+
+for rect in rects {
+  (ax, ay), (bx, by) = rect;
+  corners = [(ax, ay), (ax, by), (bx, ay), (bx, by)];
+
+  if any([not is_inside_polygon(corner) for corner in corners]) {
+    continue;
+  };
+
+  sides = [((ax, ay), (ax, by)), ((ax, by), (bx, by)),
+           ((bx, by), (bx, ay)), ((bx, ay), (ax, ay))];
+
+  if any([segment_crosses_edge(side) for side in sides]) {
+    continue;
+  };
+
+  print("Part 2:", area(((ax, ay), (bx, by))));
+  break;
+};
