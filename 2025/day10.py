@@ -1,37 +1,34 @@
 from sys import stdin
 import re
 from collections import deque
+import scipy
 
 lines = [
     (
         re.match(r"\[(.*)\]", line).group(1),
         [tuple(int(x) for x in m.split(",")) for m in re.findall(r"\(([\d,]+)\)", line)],
-        []# re.match(r"{(.*)}", line).group(1)
+        [int(x) for x in line.split()[-1][1:-1].split(",")]
     )
     for line in stdin
 ]
 
-part1 = 0
-i = 0
+part2 = 0
 for lights, buttons, joltages in lines:
-    i += 1
-    target = [c == "#" for c in lights]
-    start = [False for c in lights]
+    # See docs for variable name meanings: 
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
 
-    queue = deque([(b, start, 1) for b in buttons])
-    while len(queue):
-        button, cur, n = queue.popleft()
-        cur = cur[:]
+    # Essentially: find x such that c.dot(x) is minimized and Ax = b
 
-        for pos in button:
-            cur[pos] = not cur[pos]
+    A = [[0 for _ in range(len(buttons))] for _ in range(len(joltages))]
+    for bi, b in enumerate(buttons):
+        for ji in b:
+            A[ji][bi] = 1
 
-        if cur == target:
-            print(i)
-            part1 += n
-            break
+    c = [1 for _ in range(len(buttons))]
+    b = joltages
 
-        for b in buttons:
-            queue.append((b, cur, n+1))
+    res = scipy.optimize.linprog(c, A_eq=A, b_eq=joltages, integrality=1)
 
-print("Part 1:", part1)
+    part2 += int(sum(res.x))
+
+print(part2)
