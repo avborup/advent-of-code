@@ -1,0 +1,13 @@
+graph = defaultmap([]);
+for line in input().lines() {
+  k, vals = line.split(": ");
+  graph[k] = vals.split(" ");
+};
+
+memoized fn dfs(v, dac, fft, part2) {
+  return 1 if v == "out" and ((not part2) or (dac and fft));
+  sum([dfs(n, dac or (n == "dac"), fft or (n == "fft"), part2) for n in graph[v]])
+};
+
+print("Part 1:", dfs("you", false, false, false));
+print("Part 2:", dfs("svr", false, false, true));
