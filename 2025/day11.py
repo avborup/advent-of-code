@@ -1,5 +1,6 @@
 from collections import defaultdict
 from sys import stdin
+from functools import cache
 
 graph = defaultdict(list)
 
@@ -9,13 +10,11 @@ for line in stdin:
 
 print(graph)
 
-def dfs(v):
-    if v == "out":
+@cache
+def dfs(v, dac, fft):
+    if v == "out" and dac and fft:
         return 1
 
-    paths = 0
-    for n in graph[v]:
-        paths += dfs(n)
-    return paths
+    return sum(dfs(n, dac or (n == "dac"), fft or (n == "fft")) for n in graph[v])
 
-print("Part 1:", dfs("you"))
+print("Part 2:", dfs("svr", False, False))
